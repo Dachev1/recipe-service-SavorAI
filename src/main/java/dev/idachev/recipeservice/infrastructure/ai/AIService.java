@@ -42,22 +42,22 @@ public class AIService {
     private final ImageClient imageClient;
     private final ObjectMapper objectMapper;
     private final CloudinaryService cloudinaryService;
-    
+
     @Value("${spring.ai.image.options.model:dall-e-3}")
     private String imageModel;
-    
+
     @Value("${spring.ai.image.options.quality:standard}")
     private String imageQuality;
-    
+
     @Value("${spring.ai.image.options.width:1024}")
     private int imageWidth;
-    
+
     @Value("${spring.ai.image.options.height:1024}")
     private int imageHeight;
 
     @Autowired
-    public AIService(ChatClient chatClient, ImageClient imageClient, 
-                    ObjectMapper objectMapper, CloudinaryService cloudinaryService) {
+    public AIService(ChatClient chatClient, ImageClient imageClient,
+                     ObjectMapper objectMapper, CloudinaryService cloudinaryService) {
         this.chatClient = chatClient;
         this.imageClient = imageClient;
         this.objectMapper = objectMapper;
@@ -76,40 +76,38 @@ public class AIService {
             @NotEmpty(message = "Ingredients list cannot be empty")
             @Size(min = 1, max = 20, message = "Number of ingredients must be between 1 and 20")
             List<String> ingredients) {
-        
+
         log.info("Generating recipe from ingredients: {}", ingredients);
-        
+
         try {
             // Get prompts from the RecipePrompts class
             String systemPrompt = RecipePrompts.getRecipeFromIngredientsPrompt();
             String userPrompt = RecipePrompts.getRecipeFromIngredientsUserPrompt(ingredients);
-            
+
             Message systemMessage = new SystemPromptTemplate(systemPrompt).createMessage();
             Message userMessage = new UserMessage(userPrompt);
-            
+
             Prompt prompt = new Prompt(List.of(systemMessage, userMessage));
             ChatResponse response = chatClient.call(prompt);
-            
+
             String content = response.getResult().getOutput().getContent();
             RecipeRequest recipeRequest = objectMapper.readValue(content, RecipeRequest.class);
-            
+
             // Generate an image for the recipe
             String imageUrl = generateRecipeImage(recipeRequest.getTitle(), recipeRequest.getDescription());
-            
+
             return GeneratedMealResponse.builder()
                     .title(recipeRequest.getTitle())
                     .description(recipeRequest.getDescription())
                     .instructions(recipeRequest.getInstructions())
                     .ingredients(recipeRequest.getIngredients())
-                    .tags(new ArrayList<>(recipeRequest.getTags()))
                     .totalTimeMinutes(recipeRequest.getTotalTimeMinutes())
                     .macros(recipeRequest.getMacros())
                     .difficulty(recipeRequest.getDifficulty())
-                    .servings(recipeRequest.getServings())
                     .recipe(recipeRequest)
                     .imageUrl(imageUrl)
                     .build();
-                   
+
         } catch (JsonProcessingException e) {
             log.error("Error parsing AI response: {}", e.getMessage());
             throw new AIServiceException("Failed to parse AI-generated recipe", e);
@@ -118,11 +116,11 @@ public class AIService {
             throw new AIServiceException("Failed to generate recipe", e);
         }
     }
-    
+
     /**
      * Generate a recipe from user preferences and restrictions.
      *
-     * @param preferences List of dietary preferences
+     * @param preferences  List of dietary preferences
      * @param restrictions List of dietary restrictions
      * @return Generated recipe
      * @throws AIServiceException if there's an error with the AI service
@@ -131,24 +129,24 @@ public class AIService {
     public RecipeRequest generateRecipeFromPreferences(
             @NotEmpty(message = "Preferences list cannot be empty") List<String> preferences,
             @NotEmpty(message = "Restrictions list cannot be empty") List<String> restrictions) {
-        
+
         log.info("Generating recipe from preferences: {} and restrictions: {}", preferences, restrictions);
-        
+
         try {
             // Get prompts and variables from the RecipePrompts class
             String systemPrompt = RecipePrompts.getRecipeFromPreferencesPrompt();
             String userPrompt = RecipePrompts.getRecipeFromPreferencesUserPrompt();
             Map<String, Object> variables = RecipePrompts.getPreferencesVariables(preferences, restrictions);
-            
+
             Message systemMessage = new SystemPromptTemplate(systemPrompt).createMessage(variables);
             Message userMessage = new UserMessage(userPrompt);
-            
+
             Prompt prompt = new Prompt(List.of(systemMessage, userMessage));
             ChatResponse response = chatClient.call(prompt);
-            
+
             String content = response.getResult().getOutput().getContent();
             return objectMapper.readValue(content, RecipeRequest.class);
-            
+
         } catch (JsonProcessingException e) {
             log.error("Error parsing AI response: {}", e.getMessage());
             throw new AIServiceException("Failed to parse AI-generated recipe", e);
@@ -157,65 +155,63 @@ public class AIService {
             throw new AIServiceException("Failed to generate recipe", e);
         }
     }
-    
+
     /**
      * Generate a meal plan based on preferences and restrictions.
      *
-     * @param preferences List of dietary preferences
+     * @param preferences  List of dietary preferences
      * @param restrictions List of dietary restrictions
-     * @param mealsPerDay Number of meals per day
-     * @param days Number of days
+     * @param mealsPerDay  Number of meals per day
+     * @param days         Number of days
      * @return List of generated meals
      * @throws AIServiceException if there's an error with the AI service
      */
-    @Cacheable(value = "mealPlanCache", 
-               key = "'pref:' + #preferences.toString() + '-restr:' + #restrictions.toString() + '-meals:' + #mealsPerDay + '-days:' + #days")
+    @Cacheable(value = "mealPlanCache",
+            key = "'pref:' + #preferences.toString() + '-restr:' + #restrictions.toString() + '-meals:' + #mealsPerDay + '-days:' + #days")
     public List<GeneratedMealResponse> generateMealPlan(
             @NotEmpty(message = "Preferences list cannot be empty") List<String> preferences,
             @NotEmpty(message = "Restrictions list cannot be empty") List<String> restrictions,
             @Valid @Size(min = 1, max = 6, message = "Meals per day must be between 1 and 6") int mealsPerDay,
             @Valid @Size(min = 1, max = 30, message = "Days must be between 1 and 30") int days) {
-        
-        log.info("Generating meal plan with preferences: {}, restrictions: {}, meals per day: {}, days: {}", 
+
+        log.info("Generating meal plan with preferences: {}, restrictions: {}, meals per day: {}, days: {}",
                 preferences, restrictions, mealsPerDay, days);
-        
+
         try {
             // Get prompts and variables from the RecipePrompts class
             String systemPrompt = RecipePrompts.getMealPlanPrompt();
             String userPrompt = RecipePrompts.getMealPlanUserPrompt();
             Map<String, Object> variables = RecipePrompts.getMealPlanVariables(preferences, restrictions, mealsPerDay, days);
-            
+
             Message systemMessage = new SystemPromptTemplate(systemPrompt).createMessage(variables);
             Message userMessage = new UserMessage(userPrompt);
-            
+
             Prompt prompt = new Prompt(List.of(systemMessage, userMessage));
             ChatResponse response = chatClient.call(prompt);
-            
+
             String content = response.getResult().getOutput().getContent();
             RecipeRequest[] recipes = objectMapper.readValue(content, RecipeRequest[].class);
             List<GeneratedMealResponse> mealResponses = new ArrayList<>();
-            
+
             for (RecipeRequest recipe : recipes) {
                 String imageUrl = generateRecipeImage(recipe.getTitle(), recipe.getDescription());
-                
+
                 GeneratedMealResponse mealResponse = GeneratedMealResponse.builder()
                         .title(recipe.getTitle())
                         .description(recipe.getDescription())
                         .instructions(recipe.getInstructions())
                         .ingredients(recipe.getIngredients())
-                        .tags(new ArrayList<>(recipe.getTags()))
                         .totalTimeMinutes(recipe.getTotalTimeMinutes())
                         .macros(recipe.getMacros())
                         .difficulty(recipe.getDifficulty())
-                        .servings(recipe.getServings())
                         .recipe(recipe)
                         .imageUrl(imageUrl)
                         .build();
                 mealResponses.add(mealResponse);
             }
-            
+
             return mealResponses;
-            
+
         } catch (JsonProcessingException e) {
             log.error("Error parsing AI response: {}", e.getMessage());
             throw new AIServiceException("Failed to parse AI-generated meal plan", e);
@@ -224,7 +220,7 @@ public class AIService {
             throw new AIServiceException("Failed to generate meal plan", e);
         }
     }
-    
+
     /**
      * Generate an image for a recipe using AI and upload it to Cloudinary.
      *
@@ -235,18 +231,18 @@ public class AIService {
     public String generateRecipeImage(
             @NotEmpty(message = "Recipe title cannot be empty") String recipeTitle,
             @NotEmpty(message = "Recipe description cannot be empty") String recipeDescription) {
-        
+
         log.info("Generating image for recipe: {}", recipeTitle);
-        
+
         try {
             // Get the image prompt from the RecipePrompts class
             String prompt = RecipePrompts.getRecipeImagePrompt(recipeTitle, recipeDescription);
-            
+
             ImagePrompt imagePrompt = new ImagePrompt(prompt);
             ImageResponse imageResponse = imageClient.call(imagePrompt);
-            
+
             String aiGeneratedImageUrl = imageResponse.getResult().getOutput().getUrl();
-            
+
             // Upload the AI-generated image to Cloudinary for permanent storage
             return cloudinaryService.uploadImageFromUrl(aiGeneratedImageUrl);
         } catch (Exception e) {

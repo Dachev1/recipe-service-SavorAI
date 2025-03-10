@@ -12,7 +12,6 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.util.List;
-import java.util.Set;
 
 /**
  * Data Transfer Object for recipe creation and update requests.
@@ -38,8 +37,6 @@ public class RecipeRequest {
     @NotEmpty(message = "At least one ingredient is required")
     private List<String> ingredients;
 
-    private Set<String> tags;
-
     // Total cooking time (minutes)
     @PositiveOrZero(message = "Total time cannot be negative")
     private Integer totalTimeMinutes;
@@ -50,8 +47,4 @@ public class RecipeRequest {
 
     // Difficulty level
     private DifficultyLevel difficulty;
-
-    // Servings
-    @PositiveOrZero(message = "Servings cannot be negative")
-    private Integer servings;
 } 

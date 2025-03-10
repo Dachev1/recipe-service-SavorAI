@@ -21,15 +21,13 @@ public class FavoriteRecipe {
     @GeneratedValue
     private UUID id;
 
+    @Column
     private UUID userId;
     
+    @Column
     private UUID recipeId;
     
     private LocalDateTime addedAt;
-
-    @ManyToOne
-    @JoinColumn(name = "recipe_id", insertable = false, updatable = false)
-    private Recipe recipe;
 
     @PrePersist
     protected void onCreate() {

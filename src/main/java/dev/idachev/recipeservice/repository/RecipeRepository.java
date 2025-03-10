@@ -43,14 +43,4 @@ public interface RecipeRepository extends JpaRepository<Recipe, UUID> {
      */
     Page<Recipe> findByTitleContainingIgnoreCaseOrDescriptionContainingIgnoreCase(
             String title, String description, Pageable pageable);
-
-    /**
-     * Find recipes that have any of the specified tags, with pagination.
-     *
-     * @param tags     the list of tags to filter by
-     * @param pageable pagination information
-     * @return a page of recipes that have any of the specified tags
-     */
-    @Query("SELECT DISTINCT r FROM Recipe r JOIN r.tags t WHERE t IN :tags")
-    Page<Recipe> findByTagsIn(@Param("tags") List<String> tags, Pageable pageable);
 } 

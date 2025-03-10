@@ -112,7 +112,7 @@ public class RecipeService {
     }
 
     /**
-     * Get all recipes with pagination.
+     * Get all recipes with pagination and favorite information for a specific user.
      *
      * @param pageable the pagination information
      * @param userId   the ID of the current user, or null if not authenticated
@@ -237,35 +237,30 @@ public class RecipeService {
     }
 
     /**
-     * Filter recipes by tags.
+     * Filter recipes method (renamed from filterRecipesByTags).
+     * Now just returns all recipes since tags functionality is removed.
      *
-     * @param tags     the tags to filter by
+     * @param filters  unused parameter, kept for API compatibility
      * @param pageable the pagination information
      * @param userId   the ID of the current user, or null if not authenticated
-     * @return a page of recipe responses with the specified tags
+     * @return a page of recipe responses
      */
     @Transactional(readOnly = true)
-    public Page<RecipeResponse> filterRecipesByTags(List<String> tags, Pageable pageable, UUID userId) {
-        Page<Recipe> recipePage = recipeRepository.findByTagsIn(tags, pageable);
-        
-        List<RecipeResponse> responses = recipePage.getContent().stream()
-                .map(RecipeMapper::toResponse)
-                .map(response -> enhanceWithFavoriteInfo(response, userId))
-                .collect(Collectors.toList());
-        
-        return new PageImpl<>(responses, pageable, recipePage.getTotalElements());
+    public Page<RecipeResponse> filterRecipesByTags(List<String> filters, Pageable pageable, UUID userId) {
+        return getAllRecipes(pageable, userId);
     }
     
     /**
-     * Filter recipes by tags without user context.
+     * Filter recipes without user context (renamed from filterRecipesByTags).
+     * Now just returns all recipes since tags functionality is removed.
      *
-     * @param tags     the tags to filter by
+     * @param filters  unused parameter, kept for API compatibility
      * @param pageable the pagination information
-     * @return a page of recipe responses with the specified tags
+     * @return a page of recipe responses
      */
     @Transactional(readOnly = true)
-    public Page<RecipeResponse> filterRecipesByTags(List<String> tags, Pageable pageable) {
-        return filterRecipesByTags(tags, pageable, null);
+    public Page<RecipeResponse> filterRecipesByTags(List<String> filters, Pageable pageable) {
+        return filterRecipesByTags(filters, pageable, null);
     }
 
     /**

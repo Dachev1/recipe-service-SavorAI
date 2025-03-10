@@ -18,10 +18,6 @@ repositories {
     maven { url 'https://repo.spring.io/snapshot' }
 }
 
-ext {
-    set('springCloudVersion', "2023.0.0")
-}
-
 dependencies {
     // Core Spring Boot starters
     implementation 'org.springframework.boot:spring-boot-starter-web'
@@ -29,7 +25,6 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-security'
     implementation 'org.springframework.boot:spring-boot-starter-validation'
     implementation 'org.springframework.boot:spring-boot-starter-actuator'
-    implementation 'org.springframework.cloud:spring-cloud-starter-netflix-eureka-client'
     
     // Spring AI
     implementation 'org.springframework.ai:spring-ai-openai-spring-boot-starter:0.8.0-SNAPSHOT'
@@ -58,12 +53,6 @@ dependencies {
     
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testImplementation 'org.springframework.security:spring-security-test'
-}
-
-dependencyManagement {
-    imports {
-        mavenBom "org.springframework.cloud:spring-cloud-dependencies:${springCloudVersion}"
-    }
 }
 
 tasks.named('test') {

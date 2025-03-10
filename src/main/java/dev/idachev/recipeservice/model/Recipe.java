@@ -42,11 +42,6 @@ public class Recipe {
     @Column(name = "ingredient")
     private List<String> ingredients = new ArrayList<>();
 
-    @ElementCollection
-    @CollectionTable(name = "recipe_tags", joinColumns = @JoinColumn(name = "recipe_id"))
-    @Column(name = "tag")
-    private Set<String> tags = new HashSet<>();
-
     @Column
     private UUID userId;
 
@@ -56,7 +51,6 @@ public class Recipe {
     @Column
     private LocalDateTime updatedAt;
 
-    // Cooking time in minutes (total)
     @Column
     private Integer totalTimeMinutes;
 
@@ -64,21 +58,12 @@ public class Recipe {
     @OneToOne(mappedBy = "recipe", cascade = CascadeType.ALL, orphanRemoval = true)
     private Macros macros;
 
-    // Difficulty level
     @Enumerated(EnumType.STRING)
     @Column
     private DifficultyLevel difficulty;
 
-    // Servings
-    @Column
-    private Integer servings;
-
-    // AI generated flag
     @Column
     private Boolean isAiGenerated = false;
-
-    @OneToMany(mappedBy = "recipe", cascade = CascadeType.ALL, orphanRemoval = true)
-    private Set<FavoriteRecipe> favoriteRecipes = new HashSet<>();
 
     @PrePersist
     protected void onCreate() {

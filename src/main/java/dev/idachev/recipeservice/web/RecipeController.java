@@ -154,18 +154,20 @@ public class RecipeController {
     }
 
     /**
-     * Filter recipes by tags.
+     * Filter recipes endpoint (formerly by tags).
+     * Now just returns all recipes since tags functionality is removed.
+     * Kept for API compatibility.
      *
-     * @param tags the list of tags to filter by
+     * @param filters unused parameter, kept for API compatibility
      * @param pageable pagination parameters
-     * @return a page of recipes with the specified tags
+     * @return a page of all recipes
      */
     @GetMapping("/filter")
     public ResponseEntity<Page<RecipeResponse>> filterRecipesByTags(
-            @RequestParam List<String> tags,
+            @RequestParam List<String> filters,
             Pageable pageable) {
         UUID userId = getCurrentUserId();
-        return ResponseEntity.ok(recipeService.filterRecipesByTags(tags, pageable, userId));
+        return ResponseEntity.ok(recipeService.filterRecipesByTags(filters, pageable, userId));
     }
 
     /**

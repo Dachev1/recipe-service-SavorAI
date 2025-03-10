@@ -8,7 +8,6 @@ import dev.idachev.recipeservice.model.Macros;
 import dev.idachev.recipeservice.model.Recipe;
 
 import java.util.ArrayList;
-import java.util.HashSet;
 
 /**
  * Utility class for converting between Recipe entities and DTOs.
@@ -37,14 +36,12 @@ public final class RecipeMapper {
                 .instructions(recipe.getInstructions())
                 .imageUrl(recipe.getImageUrl())
                 .ingredients(recipe.getIngredients())
-                .tags(recipe.getTags())
                 .createdById(recipe.getUserId())
                 .createdAt(recipe.getCreatedAt())
                 .updatedAt(recipe.getUpdatedAt())
                 .totalTimeMinutes(recipe.getTotalTimeMinutes())
                 .macros(MacrosMapper.toDto(recipe.getMacros()))
                 .difficulty(recipe.getDifficulty())
-                .servings(recipe.getServings())
                 .isAiGenerated(recipe.getIsAiGenerated())
                 .isFavorite(false) // Default value, will be set by service
                 .favoriteCount(0L) // Default value, will be set by service
@@ -68,10 +65,8 @@ public final class RecipeMapper {
                 .instructions(request.getInstructions())
                 .imageUrl(request.getImageUrl())
                 .ingredients(new ArrayList<>(request.getIngredients()))
-                .tags(new HashSet<>(request.getTags()))
                 .totalTimeMinutes(request.getTotalTimeMinutes())
                 .difficulty(request.getDifficulty())
-                .servings(request.getServings())
                 .isAiGenerated(false)
                 .build();
         
@@ -101,11 +96,9 @@ public final class RecipeMapper {
         recipe.setInstructions(request.getInstructions());
         recipe.setImageUrl(request.getImageUrl());
         recipe.setIngredients(new ArrayList<>(request.getIngredients()));
-        recipe.setTags(new HashSet<>(request.getTags()));
         recipe.setTotalTimeMinutes(request.getTotalTimeMinutes());
         recipe.setDifficulty(request.getDifficulty());
-        recipe.setServings(request.getServings());
-        
+
         // Update macros if provided
         if (request.getMacros() != null) {
             if (recipe.getMacros() == null) {

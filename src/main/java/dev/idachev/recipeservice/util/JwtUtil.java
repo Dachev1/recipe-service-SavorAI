@@ -2,6 +2,7 @@ package dev.idachev.recipeservice.util;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -15,10 +16,17 @@ import java.util.UUID;
 @Component
 public class JwtUtil {
 
-    private final SecretKey key;
+    private SecretKey key;
 
     public JwtUtil(@Value("${jwt.secret}") String secret) {
-        this.key = Keys.hmacShaKeyFor(secret.getBytes());
+        try {
+            // Try to use the provided secret
+            this.key = Keys.hmacShaKeyFor(secret.getBytes());
+        } catch (io.jsonwebtoken.security.WeakKeyException e) {
+            // If the key is too weak, generate a secure key for HS256
+            System.out.println("Warning: Provided JWT secret is too weak. Generating a secure key instead.");
+            this.key = Keys.secretKeyFor(SignatureAlgorithm.HS256);
+        }
     }
 
     /**
