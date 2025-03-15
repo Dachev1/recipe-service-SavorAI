@@ -67,7 +67,7 @@ public class RecipeController {
             @RequestPart(value = "image", required = false) MultipartFile image,
             @RequestHeader("Authorization") String token) {
 
-        UUID userId = getUserIdFromToken(token, "creating recipe");
+        UUID userId = userService.getUserIdFromToken(token, "creating recipe");
         RecipeResponse response = recipeService.createRecipe(request, image, userId);
         log.info("User {} created recipe: {}", userId, response.getId());
 
@@ -87,7 +87,7 @@ public class RecipeController {
             @Valid @RequestBody RecipeRequest request,
             @RequestHeader("Authorization") String token) {
 
-        UUID userId = getUserIdFromToken(token, "creating recipe");
+        UUID userId = userService.getUserIdFromToken(token, "creating recipe");
         RecipeResponse response = recipeService.createRecipe(request, userId);
         log.info("User {} created recipe: {}", userId, response.getId());
 
@@ -107,7 +107,7 @@ public class RecipeController {
             @PathVariable UUID id,
             @RequestHeader("Authorization") String token) {
 
-        UUID userId = getUserIdFromToken(token, "viewing recipe " + id);
+        UUID userId = userService.getUserIdFromToken(token, "viewing recipe " + id);
         return ResponseEntity.ok(recipeService.getRecipeById(id, userId));
     }
 
@@ -123,7 +123,7 @@ public class RecipeController {
             Pageable pageable,
             @RequestHeader("Authorization") String token) {
 
-        UUID userId = getUserIdFromToken(token, "retrieving all recipes");
+        UUID userId = userService.getUserIdFromToken(token, "retrieving all recipes");
         return ResponseEntity.ok(recipeService.getAllRecipes(pageable, userId));
     }
 
@@ -137,7 +137,7 @@ public class RecipeController {
     public ResponseEntity<List<RecipeResponse>> getRecipesByUserId(
             @RequestHeader("Authorization") String token) {
 
-        UUID userId = getUserIdFromToken(token, "retrieving own recipes");
+        UUID userId = userService.getUserIdFromToken(token, "retrieving own recipes");
         return ResponseEntity.ok(recipeService.getRecipesByUserId(userId));
     }
 
@@ -158,7 +158,7 @@ public class RecipeController {
             @Valid @RequestBody RecipeRequest request,
             @RequestHeader("Authorization") String token) {
 
-        UUID userId = getUserIdFromToken(token, "updating recipe " + id);
+        UUID userId = userService.getUserIdFromToken(token, "updating recipe " + id);
         RecipeResponse response = recipeService.updateRecipe(id, request, userId);
         log.info("User {} updated recipe: {}", userId, id);
 
@@ -178,7 +178,7 @@ public class RecipeController {
             @PathVariable UUID id,
             @RequestHeader("Authorization") String token) {
 
-        UUID userId = getUserIdFromToken(token, "deleting recipe " + id);
+        UUID userId = userService.getUserIdFromToken(token, "deleting recipe " + id);
         recipeService.deleteRecipe(id, userId);
         log.info("User {} deleted recipe: {}", userId, id);
 
@@ -199,7 +199,7 @@ public class RecipeController {
             Pageable pageable,
             @RequestHeader("Authorization") String token) {
 
-        UUID userId = getUserIdFromToken(token, "searching recipes");
+        UUID userId = userService.getUserIdFromToken(token, "searching recipes");
         return ResponseEntity.ok(recipeService.searchRecipes(keyword, pageable, userId));
     }
 
@@ -213,7 +213,7 @@ public class RecipeController {
     public ResponseEntity<List<RecipeResponse>> getMyRecipes(
             @RequestHeader("Authorization") String token) {
 
-        UUID userId = getUserIdFromToken(token, "retrieving own recipes");
+        UUID userId = userService.getUserIdFromToken(token, "retrieving own recipes");
         return ResponseEntity.ok(recipeService.getRecipesByUserId(userId));
     }
 
@@ -231,21 +231,10 @@ public class RecipeController {
             @RequestBody @NotEmpty(message = "Ingredients list cannot be empty") List<String> ingredients,
             @RequestHeader("Authorization") String token) {
 
-        UUID userId = getUserIdFromToken(token, "generating recipe");
+        UUID userId = userService.getUserIdFromToken(token, "generating recipe");
         SimplifiedRecipeResponse recipe = recipeService.generateMeal(ingredients);
         log.info("User {} generated recipe from {} ingredients", userId, ingredients.size());
         
         return ResponseEntity.ok(recipe);
-    }
-
-    /**
-     * Helper method to extract and log user ID from token
-     * Exceptions will propagate to the GlobalExceptionHandler
-     */
-    private UUID getUserIdFromToken(String token, String action) {
-        UserDTO user = userService.getCurrentUser(token);
-        UUID userId = userService.getUserIdFromUsername(user.getUsername());
-        log.debug("User {} (ID: {}) {}", user.getUsername(), userId, action);
-        return userId;
     }
 } 

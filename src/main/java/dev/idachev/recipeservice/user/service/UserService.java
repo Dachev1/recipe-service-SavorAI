@@ -65,4 +65,18 @@ public class UserService {
 
         return UUID.nameUUIDFromBytes(username.getBytes());
     }
+
+    /**
+     * Get user ID from authorization token with action logging
+     * 
+     * @param token JWT authorization token
+     * @param action Description of the action being performed
+     * @return User's UUID
+     */
+    public UUID getUserIdFromToken(String token, String action) {
+        UserDTO user = getCurrentUser(token);
+        UUID userId = getUserIdFromUsername(user.getUsername());
+        log.debug("User {} (ID: {}) {}", user.getUsername(), userId, action);
+        return userId;
+    }
 } 
