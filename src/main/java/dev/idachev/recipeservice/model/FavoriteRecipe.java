@@ -6,9 +6,6 @@ import lombok.*;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
-/**
- * Entity representing a user's favorite recipe.
- */
 @Entity
 @Getter
 @Setter
@@ -23,10 +20,10 @@ public class FavoriteRecipe {
 
     @Column
     private UUID userId;
-    
+
     @Column
     private UUID recipeId;
-    
+
     private LocalDateTime addedAt;
 
     @PrePersist

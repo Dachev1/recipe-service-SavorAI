@@ -1,78 +1,55 @@
 package dev.idachev.recipeservice.model;
 
 import jakarta.persistence.*;
-import lombok.*;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
 import java.util.UUID;
 
-/**
- * Recipe entity representing a culinary recipe in the system.
- */
 @Entity
-@Table(name = "recipes")
-@Getter
-@Setter
+@Table
+@Data
 @NoArgsConstructor
-@AllArgsConstructor
-@Builder
 public class Recipe {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
-    @Column(nullable = false)
+    @Column
     private String title;
 
-    @Column(length = 1000)
+    @Column
     private String description;
 
     @Column(columnDefinition = "TEXT")
     private String instructions;
 
+    @Column
     private String imageUrl;
 
-    @ElementCollection
-    @CollectionTable(name = "recipe_ingredients", joinColumns = @JoinColumn(name = "recipe_id"))
-    @Column(name = "ingredient")
-    private List<String> ingredients = new ArrayList<>();
+    @Column(columnDefinition = "TEXT")
+    private String ingredients;
 
     @Column
     private UUID userId;
 
     @Column
-    private LocalDateTime createdAt;
+    private LocalDateTime createdAt = LocalDateTime.now();
 
     @Column
-    private LocalDateTime updatedAt;
+    private LocalDateTime updatedAt = LocalDateTime.now();
 
     @Column
     private Integer totalTimeMinutes;
 
-    // Nutritional information (macros) - now in a separate entity
-    @OneToOne(mappedBy = "recipe", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToOne(cascade = CascadeType.ALL, orphanRemoval = true)
     private Macros macros;
 
-    @Enumerated(EnumType.STRING)
     @Column
-    private DifficultyLevel difficulty;
+    private String difficulty;
 
     @Column
     private Boolean isAiGenerated = false;
-
-    @PrePersist
-    protected void onCreate() {
-        createdAt = LocalDateTime.now();
-        updatedAt = LocalDateTime.now();
-    }
-
-    @PreUpdate
-    protected void onUpdate() {
-        updatedAt = LocalDateTime.now();
-    }
 } 

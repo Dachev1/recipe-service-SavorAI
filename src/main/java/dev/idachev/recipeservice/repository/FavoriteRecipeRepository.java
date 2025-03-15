@@ -12,13 +12,14 @@ import java.util.UUID;
 
 @Repository
 public interface FavoriteRecipeRepository extends JpaRepository<FavoriteRecipe, UUID> {
+
     Page<FavoriteRecipe> findByUserId(UUID userId, Pageable pageable);
-    
+
     List<FavoriteRecipe> findByUserId(UUID userId);
-    
+
     boolean existsByUserIdAndRecipeId(UUID userId, UUID recipeId);
-    
+
     long countByRecipeId(UUID recipeId);
-    
+
     Optional<FavoriteRecipe> findByUserIdAndRecipeId(UUID userId, UUID recipeId);
 } 

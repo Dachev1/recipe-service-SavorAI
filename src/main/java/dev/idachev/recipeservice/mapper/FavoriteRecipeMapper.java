@@ -4,6 +4,7 @@ import dev.idachev.recipeservice.model.FavoriteRecipe;
 import dev.idachev.recipeservice.model.Recipe;
 import dev.idachev.recipeservice.web.dto.FavoriteRecipeDto;
 import dev.idachev.recipeservice.web.dto.RecipeResponse;
+import lombok.experimental.UtilityClass;
 
 import java.util.List;
 import java.util.Objects;
@@ -11,22 +12,19 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 /**
- * Utility class for converting between FavoriteRecipe entities and DTOs.
+ * Mapper for favorite recipe transformations.
+ * Provides methods for converting between FavoriteRecipe entities and DTOs.
  */
-public final class FavoriteRecipeMapper {
-
-    private FavoriteRecipeMapper() {}
+@UtilityClass
+public class FavoriteRecipeMapper {
 
     /**
-     * Convert a FavoriteRecipe entity to a FavoriteRecipeDto with optional recipe data.
-     *
-     * @param favoriteRecipe the FavoriteRecipe entity
-     * @param recipeResponse the recipe response (optional)
-     * @return the FavoriteRecipeDto
+     * Converts a FavoriteRecipe entity to a FavoriteRecipeDto with optional recipe data.
      */
     public static FavoriteRecipeDto toDto(FavoriteRecipe favoriteRecipe, RecipeResponse recipeResponse) {
+
         if (favoriteRecipe == null) {
-            return null;
+            throw new IllegalArgumentException("Cannot convert null favoriteRecipe to DTO");
         }
 
         return FavoriteRecipeDto.builder()
@@ -36,60 +34,36 @@ public final class FavoriteRecipeMapper {
                 .recipe(recipeResponse)
                 .build();
     }
-    
-    /**
-     * Convert a FavoriteRecipe entity to a FavoriteRecipeDto without recipe details.
-     *
-     * @param favoriteRecipe the FavoriteRecipe entity
-     * @return the FavoriteRecipeDto with only the recipe ID
-     */
-    public static FavoriteRecipeDto toDto(FavoriteRecipe favoriteRecipe) {
-        return toDto(favoriteRecipe, null);
-    }
-    
-    /**
-     * Convert a list of FavoriteRecipe entities to a list of DTOs.
-     *
-     * @param favorites the list of favorite recipes
-     * @return the list of DTOs
-     */
-    public static List<FavoriteRecipeDto> toDtoList(List<FavoriteRecipe> favorites) {
-        if (favorites == null) {
-            return List.of();
-        }
-        
-        return favorites.stream()
-                .filter(Objects::nonNull)
-                .map(FavoriteRecipeMapper::toDto)
-                .collect(Collectors.toList());
-    }
+
 
     /**
-     * Create a new FavoriteRecipe entity.
-     *
-     * @param userId the ID of the user
-     * @param recipeId the ID of the recipe
-     * @return the FavoriteRecipe entity
+     * Creates a new FavoriteRecipe entity.
      */
     public static FavoriteRecipe create(UUID userId, UUID recipeId) {
-        if (userId == null || recipeId == null) {
-            return null;
+
+        if (userId == null) {
+            throw new IllegalArgumentException("User ID cannot be null");
         }
-        
+
+        if (recipeId == null) {
+            throw new IllegalArgumentException("Recipe ID cannot be null");
+        }
+
         return FavoriteRecipe.builder()
                 .userId(userId)
                 .recipeId(recipeId)
                 .build();
     }
-    
+
     /**
-     * Create a new FavoriteRecipe entity from a Recipe entity.
-     *
-     * @param userId the ID of the user
-     * @param recipe the Recipe entity
-     * @return the FavoriteRecipe entity
+     * Creates a new FavoriteRecipe entity from a Recipe entity.
      */
     public static FavoriteRecipe create(UUID userId, Recipe recipe) {
-        return recipe == null ? null : create(userId, recipe.getId());
+
+        if (recipe == null) {
+            throw new IllegalArgumentException("Recipe cannot be null");
+        }
+
+        return create(userId, recipe.getId());
     }
 } 

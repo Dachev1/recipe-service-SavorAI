@@ -1,31 +1,27 @@
 package dev.idachev.recipeservice.mapper;
 
 import dev.idachev.recipeservice.model.Macros;
-import dev.idachev.recipeservice.model.Recipe;
 import dev.idachev.recipeservice.web.dto.MacrosDto;
+import lombok.experimental.UtilityClass;
 
 /**
- * Utility class for converting between Macros entities and DTOs.
+ * Mapper for macronutrient transformations.
+ * Provides methods for converting between Macros entities and DTOs.
  */
-public final class MacrosMapper {
-
-    private MacrosMapper() {
-        // Private constructor to prevent instantiation
-    }
+@UtilityClass
+public class MacrosMapper {
 
     /**
-     * Convert a Macros entity to a MacrosDto.
-     *
-     * @param macros the Macros entity
-     * @return the MacrosDto
+     * Converts a Macros entity to a MacrosDto.
      */
     public static MacrosDto toDto(Macros macros) {
+
         if (macros == null) {
             return null;
         }
 
         return MacrosDto.builder()
-                .calories(macros.getCalories())
+                .calories(macros.getCalories() != null ? macros.getCalories().intValue() : null)
                 .proteinGrams(macros.getProteinGrams())
                 .carbsGrams(macros.getCarbsGrams())
                 .fatGrams(macros.getFatGrams())
@@ -33,36 +29,37 @@ public final class MacrosMapper {
     }
 
     /**
-     * Convert a MacrosDto to a Macros entity.
-     *
-     * @param dto the MacrosDto
-     * @return the Macros entity
+     * Converts a MacrosDto to a Macros entity.
      */
     public static Macros toEntity(MacrosDto dto) {
+
         if (dto == null) {
             return null;
         }
 
-        return Macros.builder()
-                .calories(dto.getCalories())
-                .proteinGrams(dto.getProteinGrams())
-                .carbsGrams(dto.getCarbsGrams())
-                .fatGrams(dto.getFatGrams())
-                .build();
+        Macros macros = new Macros();
+        macros.setCalories(dto.getCalories() != null ? dto.getCalories().doubleValue() : null);
+        macros.setProteinGrams(dto.getProteinGrams());
+        macros.setCarbsGrams(dto.getCarbsGrams());
+        macros.setFatGrams(dto.getFatGrams());
+
+        return macros;
     }
 
     /**
-     * Update a Macros entity with data from a MacrosDto.
-     *
-     * @param macros the Macros entity to update
-     * @param dto    the MacrosDto with new data
+     * Updates a Macros entity with data from a MacrosDto.
      */
     public static void updateEntityFromDto(Macros macros, MacrosDto dto) {
-        if (macros == null || dto == null) {
+
+        if (macros == null) {
+            throw new IllegalArgumentException("Cannot update null macros entity");
+        }
+
+        if (dto == null) {
             return;
         }
 
-        macros.setCalories(dto.getCalories());
+        macros.setCalories(dto.getCalories() != null ? dto.getCalories().doubleValue() : null);
         macros.setProteinGrams(dto.getProteinGrams());
         macros.setCarbsGrams(dto.getCarbsGrams());
         macros.setFatGrams(dto.getFatGrams());

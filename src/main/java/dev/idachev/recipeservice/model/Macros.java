@@ -1,39 +1,30 @@
 package dev.idachev.recipeservice.model;
 
 import jakarta.persistence.*;
-import lombok.*;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.util.UUID;
 
-/**
- * Macros entity representing nutritional information for a recipe.
- */
 @Entity
-@Table(name = "macros")
-@Getter
-@Setter
+@Table
+@Data
 @NoArgsConstructor
-@AllArgsConstructor
-@Builder
 public class Macros {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
-    @OneToOne
-    @JoinColumn(name = "recipe_id")
-    private Recipe recipe;
+    @Column
+    private Double calories;
 
-    @Column()
-    private Integer calories;
-
-    @Column()
+    @Column
     private Double proteinGrams;
 
-    @Column()
+    @Column
     private Double carbsGrams;
 
-    @Column()
+    @Column
     private Double fatGrams;
 } 
