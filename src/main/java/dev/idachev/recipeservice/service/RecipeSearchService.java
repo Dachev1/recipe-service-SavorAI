@@ -29,11 +29,11 @@ public class RecipeSearchService {
     private final RecipeRepository recipeRepository;
     private final FavoriteRecipeRepository favoriteRecipeRepository;
     private final RecipeMapper recipeMapper;
-    
+
     @Autowired
-    public RecipeSearchService(RecipeRepository recipeRepository, 
-                              FavoriteRecipeRepository favoriteRecipeRepository, 
-                              RecipeMapper recipeMapper) {
+    public RecipeSearchService(RecipeRepository recipeRepository,
+                               FavoriteRecipeRepository favoriteRecipeRepository,
+                               RecipeMapper recipeMapper) {
         this.recipeRepository = recipeRepository;
         this.favoriteRecipeRepository = favoriteRecipeRepository;
         this.recipeMapper = recipeMapper;

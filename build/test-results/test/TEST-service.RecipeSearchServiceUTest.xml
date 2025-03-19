@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="service.RecipeSearchServiceUTest" tests="6" skipped="0" failures="0" errors="0" timestamp="2025-03-19T11:48:16" hostname="DACHEV" time="1.878">
+  <properties/>
+  <testcase name="givenTags_whenFilterRecipesByTags_thenReturnFilteredRecipes()" classname="service.RecipeSearchServiceUTest" time="1.826"/>
+  <testcase name="givenValidKeyword_whenSearch_thenSearchResult()" classname="service.RecipeSearchServiceUTest" time="0.017"/>
+  <testcase name="givenNullKeyword_whenSearchRecipes_thenReturnAllRecipes()" classname="service.RecipeSearchServiceUTest" time="0.006"/>
+  <testcase name="givenNoTags_whenFilterRecipesByTags_thenReturnAllRecipes()" classname="service.RecipeSearchServiceUTest" time="0.006"/>
+  <testcase name="givenPagination_whenGetAllRecipes_thenReturnPagedRecipes()" classname="service.RecipeSearchServiceUTest" time="0.006"/>
+  <testcase name="givenEmptyKeyword_whenSearchRecipes_thenReturnAllRecipes()" classname="service.RecipeSearchServiceUTest" time="0.006"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[WARNING: A Java agent has been loaded dynamically (C:\Users\pffe3\.gradle\caches\modules-2\files-2.1\net.bytebuddy\byte-buddy-agent\1.14.13\979ce25f7d3096a2e82214ba7dc972a05ce7a171\byte-buddy-agent-1.14.13.jar)
+WARNING: If a serviceability tool is in use, please run with -XX:+EnableDynamicAgentLoading to hide this warning
+WARNING: If a serviceability tool is not in use, please run with -Djdk.instrument.traceUsage for more information
+WARNING: Dynamic loading of agents will be disallowed by default in a future release
+]]></system-err>
+</testsuite>
