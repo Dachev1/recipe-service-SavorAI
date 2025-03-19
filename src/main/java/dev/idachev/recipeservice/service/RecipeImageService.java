@@ -19,14 +19,12 @@ public class RecipeImageService {
 
     private final AIService aiService;
     private final ImageService imageService;
-
-
+    
     @Autowired
     public RecipeImageService(AIService aiService, ImageService imageService) {
         this.aiService = aiService;
         this.imageService = imageService;
     }
-
 
     /**
      * Process image for a recipe (upload or generate)
@@ -53,7 +51,6 @@ public class RecipeImageService {
 
             // Otherwise, if title is available, generate an image
             if (StringUtils.hasText(title)) {
-
                 log.debug("No image provided, will attempt to generate one for: {}", title);
                 return generateRecipeImage(title, description);
             }
@@ -61,7 +58,6 @@ public class RecipeImageService {
             log.debug("No image provided and no title available for image generation");
             return null;
         } catch (Exception e) {
-
             log.error("Failed to process recipe image: {}", e.getMessage());
             return null;
         }
@@ -75,12 +71,9 @@ public class RecipeImageService {
      * @throws ImageProcessingException if upload fails
      */
     private String uploadRecipeImage(MultipartFile image) {
-
         try {
-
             return imageService.uploadImage(image);
         } catch (Exception e) {
-
             String errorMessage = "Failed to upload image: " + e.getMessage();
             log.error(errorMessage, e);
             throw new ImageProcessingException(errorMessage, e);
@@ -95,7 +88,6 @@ public class RecipeImageService {
      * @return URL of the generated image, or null if generation fails
      */
     public String generateRecipeImage(String title, String description) {
-
         if (!StringUtils.hasText(title)) {
             log.warn("Cannot generate image: Recipe title is empty");
             return null;

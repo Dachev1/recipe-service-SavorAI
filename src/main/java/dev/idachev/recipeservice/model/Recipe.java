@@ -1,6 +1,8 @@
 package dev.idachev.recipeservice.model;
 
 import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
@@ -10,7 +12,9 @@ import java.util.UUID;
 @Entity
 @Table
 @Data
+@Builder
 @NoArgsConstructor
+@AllArgsConstructor
 public class Recipe {
 
     @Id
@@ -36,9 +40,11 @@ public class Recipe {
     private UUID userId;
 
     @Column
+    @Builder.Default
     private LocalDateTime createdAt = LocalDateTime.now();
 
     @Column
+    @Builder.Default
     private LocalDateTime updatedAt = LocalDateTime.now();
 
     @Column
@@ -51,5 +57,6 @@ public class Recipe {
     private String difficulty;
 
     @Column
+    @Builder.Default
     private Boolean isAiGenerated = false;
 } 

@@ -1,7 +1,6 @@
 package dev.idachev.recipeservice.service;
 
 import dev.idachev.recipeservice.exception.ResourceNotFoundException;
-import dev.idachev.recipeservice.exception.ValidationException;
 import dev.idachev.recipeservice.mapper.FavoriteRecipeMapper;
 import dev.idachev.recipeservice.mapper.RecipeMapper;
 import dev.idachev.recipeservice.model.FavoriteRecipe;
@@ -11,12 +10,14 @@ import dev.idachev.recipeservice.repository.RecipeRepository;
 import dev.idachev.recipeservice.web.dto.FavoriteRecipeDto;
 import dev.idachev.recipeservice.web.dto.RecipeResponse;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -35,6 +36,7 @@ public class FavoriteRecipeService {
     private final RecipeImageService recipeImageService;
     private final RecipeMapper recipeMapper;
 
+    @Autowired
     public FavoriteRecipeService(FavoriteRecipeRepository favoriteRecipeRepository,
                                  RecipeRepository recipeRepository,
                                  RecipeImageService recipeImageService,
@@ -50,13 +52,6 @@ public class FavoriteRecipeService {
      */
     @Transactional
     public FavoriteRecipeDto addToFavorites(UUID userId, UUID recipeId) {
-        if (userId == null) {
-            throw new ValidationException("User ID cannot be null");
-        }
-        if (recipeId == null) {
-            throw new ValidationException("Recipe ID cannot be null");
-        }
-
         // Check if already in favorites
         if (favoriteRecipeRepository.existsByUserIdAndRecipeId(userId, recipeId)) {
             log.info("Recipe {} is already in favorites for user {}", recipeId, userId);
@@ -139,13 +134,6 @@ public class FavoriteRecipeService {
      */
     @Transactional
     public void removeFromFavorites(UUID userId, UUID recipeId) {
-        if (userId == null) {
-            throw new ValidationException("User ID cannot be null");
-        }
-        if (recipeId == null) {
-            throw new ValidationException("Recipe ID cannot be null");
-        }
-
         FavoriteRecipe favoriteRecipe = findFavoriteByUserAndRecipeOrThrow(userId, recipeId);
         favoriteRecipeRepository.delete(favoriteRecipe);
         log.info("Removed recipe {} from favorites for user {}", recipeId, userId);
@@ -156,15 +144,13 @@ public class FavoriteRecipeService {
      */
     @Transactional(readOnly = true)
     public Page<FavoriteRecipeDto> getUserFavorites(UUID userId, Pageable pageable) {
-        if (userId == null) {
-            throw new ValidationException("User ID cannot be null");
-        }
-        if (pageable == null) {
-            throw new ValidationException("Pageable cannot be null");
-        }
-
         log.debug("Fetching favorites for user {} with pagination", userId);
         Page<FavoriteRecipe> favoritesPage = favoriteRecipeRepository.findByUserId(userId, pageable);
+
+        if (favoritesPage.isEmpty()) {
+            log.debug("No favorites found for user {}", userId);
+            return Page.empty(pageable);
+        }
 
         // Create a map of recipe IDs to recipes
         Map<UUID, Recipe> recipesMap = getRecipesMapFromFavorites(favoritesPage.getContent());
@@ -177,6 +163,10 @@ public class FavoriteRecipeService {
      * Create a map of recipe IDs to recipe entities.
      */
     private Map<UUID, Recipe> getRecipesMapFromFavorites(List<FavoriteRecipe> favorites) {
+        if (favorites == null || favorites.isEmpty()) {
+            return Collections.emptyMap();
+        }
+
         List<UUID> recipeIds = favorites.stream()
                 .map(FavoriteRecipe::getRecipeId)
                 .toList();
@@ -199,16 +189,12 @@ public class FavoriteRecipeService {
      */
     @Transactional(readOnly = true)
     public List<FavoriteRecipeDto> getAllUserFavorites(UUID userId) {
-        if (userId == null) {
-            throw new ValidationException("User ID cannot be null");
-        }
-
         log.debug("Fetching all favorites for user {}", userId);
         List<FavoriteRecipe> favorites = favoriteRecipeRepository.findByUserId(userId);
 
         if (favorites.isEmpty()) {
             log.debug("No favorites found for user {}", userId);
-            return List.of();
+            return Collections.emptyList();
         }
 
         // Create a map of recipe IDs to recipes
@@ -225,13 +211,6 @@ public class FavoriteRecipeService {
      */
     @Transactional(readOnly = true)
     public boolean isRecipeInFavorites(UUID userId, UUID recipeId) {
-        if (userId == null) {
-            throw new ValidationException("User ID cannot be null");
-        }
-        if (recipeId == null) {
-            throw new ValidationException("Recipe ID cannot be null");
-        }
-
         return favoriteRecipeRepository.existsByUserIdAndRecipeId(userId, recipeId);
     }
 
@@ -240,10 +219,6 @@ public class FavoriteRecipeService {
      */
     @Transactional(readOnly = true)
     public long getFavoriteCount(UUID recipeId) {
-        if (recipeId == null) {
-            throw new ValidationException("Recipe ID cannot be null");
-        }
-
         return favoriteRecipeRepository.countByRecipeId(recipeId);
     }
 } 

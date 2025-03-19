@@ -1,12 +1,12 @@
 package dev.idachev.recipeservice.service;
 
-import dev.idachev.recipeservice.exception.ValidationException;
 import dev.idachev.recipeservice.mapper.RecipeMapper;
 import dev.idachev.recipeservice.model.Recipe;
 import dev.idachev.recipeservice.repository.FavoriteRecipeRepository;
 import dev.idachev.recipeservice.repository.RecipeRepository;
 import dev.idachev.recipeservice.web.dto.RecipeResponse;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
@@ -29,8 +29,11 @@ public class RecipeSearchService {
     private final RecipeRepository recipeRepository;
     private final FavoriteRecipeRepository favoriteRecipeRepository;
     private final RecipeMapper recipeMapper;
-
-    public RecipeSearchService(RecipeRepository recipeRepository, FavoriteRecipeRepository favoriteRecipeRepository, RecipeMapper recipeMapper) {
+    
+    @Autowired
+    public RecipeSearchService(RecipeRepository recipeRepository, 
+                              FavoriteRecipeRepository favoriteRecipeRepository, 
+                              RecipeMapper recipeMapper) {
         this.recipeRepository = recipeRepository;
         this.favoriteRecipeRepository = favoriteRecipeRepository;
         this.recipeMapper = recipeMapper;
@@ -43,14 +46,9 @@ public class RecipeSearchService {
      * @param pageable Pagination information
      * @param userId   Optional user ID for favorite information
      * @return Page of matching recipes
-     * @throws ValidationException if pageable is null
      */
     @Transactional(readOnly = true)
     public Page<RecipeResponse> searchRecipes(String keyword, Pageable pageable, UUID userId) {
-        if (pageable == null) {
-            throw new ValidationException("Pageable cannot be null");
-        }
-
         // If keyword is null or empty, return all recipes
         if (!StringUtils.hasText(keyword)) {
             log.debug("Empty search keyword, returning all recipes");
@@ -73,14 +71,9 @@ public class RecipeSearchService {
      * @param pageable Pagination information
      * @param userId   Optional user ID for favorite information
      * @return Page of recipes
-     * @throws ValidationException if pageable is null
      */
     @Transactional(readOnly = true)
     public Page<RecipeResponse> getAllRecipes(Pageable pageable, UUID userId) {
-        if (pageable == null) {
-            throw new ValidationException("Pageable cannot be null");
-        }
-
         log.debug("Fetching all recipes with pagination: {}", pageable);
         Page<Recipe> recipePage = recipeRepository.findAll(pageable);
         log.debug("Found {} total recipes", recipePage.getTotalElements());
@@ -96,14 +89,9 @@ public class RecipeSearchService {
      * @param pageable Pagination information
      * @param userId   Optional user ID for favorite information
      * @return Page of filtered recipes
-     * @throws ValidationException if pageable is null
      */
     @Transactional(readOnly = true)
     public Page<RecipeResponse> filterRecipesByTags(List<String> filters, Pageable pageable, UUID userId) {
-        if (pageable == null) {
-            throw new ValidationException("Pageable cannot be null");
-        }
-
         // TODO: Implement actual tag filtering logic
         if (filters != null && !filters.isEmpty()) {
             log.debug("Filtering recipes by tags: {}", String.join(", ", filters));

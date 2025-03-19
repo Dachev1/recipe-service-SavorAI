@@ -1,19 +1,19 @@
 package dev.idachev.recipeservice.mapper;
 
-import dev.idachev.recipeservice.exception.ValidationException;
 import dev.idachev.recipeservice.web.dto.MacrosDto;
 import dev.idachev.recipeservice.web.dto.RecipeRequest;
 import dev.idachev.recipeservice.web.dto.SimplifiedRecipeResponse;
 import lombok.experimental.UtilityClass;
 
 import java.util.Collections;
+import java.util.Objects;
 
 /**
  * Mapper for AI-related data transformations.
  * Provides methods for converting between AI-generated recipe data and response objects.
  */
 @UtilityClass
-public class  AIServiceMapper {
+public class AIServiceMapper {
 
     /**
      * Maps a RecipeRequest to a SimplifiedRecipeResponse.
@@ -21,12 +21,9 @@ public class  AIServiceMapper {
      * @param recipe   the RecipeRequest from AI generation
      * @param imageUrl the generated image URL
      * @return the SimplifiedRecipeResponse
-     * @throws ValidationException if recipe is null
      */
     public static SimplifiedRecipeResponse toSimplifiedResponse(RecipeRequest recipe, String imageUrl) {
-        if (recipe == null) {
-            throw new ValidationException("Recipe cannot be null");
-        }
+        Objects.requireNonNull(recipe, "Recipe cannot be null");
 
         return SimplifiedRecipeResponse.builder()
                 .title(recipe.getTitle())

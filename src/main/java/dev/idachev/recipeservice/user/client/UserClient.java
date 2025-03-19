@@ -22,9 +22,7 @@ public interface UserClient {
      * @return User data
      */
     @GetMapping("/api/v1/user/{userId}")
-    ResponseEntity<UserDTO> getUserById(
-            @RequestHeader("Authorization") String token,
-            @PathVariable("userId") UUID userId);
+    ResponseEntity<UserDTO> getUserById(@RequestHeader("Authorization") String token, @PathVariable("userId") UUID userId);
 
     /**
      * Get current user information based on the JWT token.
@@ -33,6 +31,5 @@ public interface UserClient {
      * @return Current user data
      */
     @GetMapping("/api/v1/user/current-user")
-    ResponseEntity<UserDTO> getCurrentUser(
-            @RequestHeader("Authorization") String token);
+    ResponseEntity<UserDTO> getCurrentUser(@RequestHeader("Authorization") String token);
 } 

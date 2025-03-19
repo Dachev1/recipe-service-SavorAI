@@ -1,7 +1,6 @@
 package dev.idachev.recipeservice.web;
 
 import dev.idachev.recipeservice.service.RecipeService;
-import dev.idachev.recipeservice.user.dto.UserDTO;
 import dev.idachev.recipeservice.user.service.UserService;
 import dev.idachev.recipeservice.web.dto.RecipeRequest;
 import dev.idachev.recipeservice.web.dto.RecipeResponse;

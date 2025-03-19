@@ -9,6 +9,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
+import java.util.Objects;
 import java.util.UUID;
 
 @Service
@@ -31,7 +32,6 @@ public class UserService {
      * @throws FeignClientException  if communication with user-service fails
      */
     public UserDTO getCurrentUser(String token) {
-
         try {
             ResponseEntity<UserDTO> response = userClient.getCurrentUser(token);
 
@@ -41,11 +41,9 @@ public class UserService {
 
             return response.getBody();
         } catch (FeignClientException e) {
-
             log.error("Error from user-service: {}", e.getMessage());
             throw e;
         } catch (Exception e) {
-
             log.error("Error authenticating user: {}", e.getMessage());
             throw new UnauthorizedException("Authentication failed: " + e.getMessage());
         }
@@ -58,9 +56,10 @@ public class UserService {
      * @return A UUID deterministically generated from the username
      */
     public UUID getUserIdFromUsername(String username) {
-
-        if (username == null || username.isEmpty()) {
-            throw new IllegalArgumentException("Username cannot be null or empty");
+        Objects.requireNonNull(username, "Username cannot be null or empty");
+        
+        if (username.isEmpty()) {
+            throw new IllegalArgumentException("Username cannot be empty");
         }
 
         return UUID.nameUUIDFromBytes(username.getBytes());

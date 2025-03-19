@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="service.RecipeServiceUTest" tests="11" skipped="0" failures="0" errors="0" timestamp="2025-03-19T10:52:22" hostname="DACHEV" time="1.933">
+  <properties/>
+  <testcase name="givenValidOwner_whenDeleteRecipe_thenCallDeleteRepository()" classname="service.RecipeServiceUTest" time="1.825"/>
+  <testcase name="givenValidOwner_whenUpdateRecipe_thenUpdateRecipe()" classname="service.RecipeServiceUTest" time="0.027"/>
+  <testcase name="givenImageFile_whenCreateRecipe_thenProcessImage()" classname="service.RecipeServiceUTest" time="0.008"/>
+  <testcase name="givenIngredients_whenGenerateMeal_thenReturnGeneratedRecipe()" classname="service.RecipeServiceUTest" time="0.008"/>
+  <testcase name="givenInvalidOwner_whenUpdateRecipe_thenThrowUnauthorizedException()" classname="service.RecipeServiceUTest" time="0.009"/>
+  <testcase name="givenValidPagination_whenGetAllRecipes_thenReturnPagedRecipes()" classname="service.RecipeServiceUTest" time="0.014"/>
+  <testcase name="givenInvalidId_whenGetRecipeById_thenThrowRecipeNotFoundException()" classname="service.RecipeServiceUTest" time="0.005"/>
+  <testcase name="givenValidRequest_whenCreateRecipe_thenReturnRecipeResponse()" classname="service.RecipeServiceUTest" time="0.007"/>
+  <testcase name="givenInvalidOwner_whenDeleteRecipe_thenThrowUnauthorizedException()" classname="service.RecipeServiceUTest" time="0.006"/>
+  <testcase name="givenValidId_whenGetRecipeById_thenReturnRecipeResponse()" classname="service.RecipeServiceUTest" time="0.006"/>
+  <testcase name="givenKeyword_whenSearchRecipes_thenReturnMatchedRecipes()" classname="service.RecipeServiceUTest" time="0.004"/>
+  <system-out><![CDATA[12:52:23.917 [Test worker] INFO dev.idachev.recipeservice.service.RecipeService -- Recipe with ID d9c866a8-8550-45ff-b38e-02156bad8ef3 deleted successfully
+12:52:23.967 [Test worker] INFO dev.idachev.recipeservice.service.RecipeService -- Updated recipe with ID: f1cdd37d-9bcb-4222-b1e5-d21ee0bb9669
+12:52:23.987 [Test worker] INFO dev.idachev.recipeservice.service.RecipeService -- Created recipe with ID: afa1b32f-2d21-44d8-be0e-ce446bc69698
+12:52:23.998 [Test worker] INFO dev.idachev.recipeservice.service.RecipeService -- Generating meal from 3 ingredients
+12:52:24.008 [Test worker] WARN dev.idachev.recipeservice.service.RecipeService -- Unauthorized access attempt: User d3a3790a-9d04-4ece-a239-7fec046c72bb attempted to access recipe e42f8c45-de4f-4e08-a063-64231348749b
+12:52:24.037 [Test worker] INFO dev.idachev.recipeservice.service.RecipeService -- Created recipe with ID: fba01160-8dbd-4074-9684-026eb38351f7
+12:52:24.044 [Test worker] WARN dev.idachev.recipeservice.service.RecipeService -- Unauthorized access attempt: User 2dcd849e-aad5-46eb-bbff-0e8dc92623fa attempted to access recipe 6812e3ff-8c1a-41d7-a0eb-c461cea6c67f
+]]></system-out>
+  <system-err><![CDATA[WARNING: A Java agent has been loaded dynamically (C:\Users\pffe3\.gradle\caches\modules-2\files-2.1\net.bytebuddy\byte-buddy-agent\1.14.13\979ce25f7d3096a2e82214ba7dc972a05ce7a171\byte-buddy-agent-1.14.13.jar)
+WARNING: If a serviceability tool is in use, please run with -XX:+EnableDynamicAgentLoading to hide this warning
+WARNING: If a serviceability tool is not in use, please run with -Djdk.instrument.traceUsage for more information
+WARNING: Dynamic loading of agents will be disallowed by default in a future release
+]]></system-err>
+</testsuite>

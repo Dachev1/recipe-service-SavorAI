@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+<meta http-equiv="x-ua-compatible" content="IE=edge"/>
+<title>Test results - RecipeServiceUTest</title>
+<link href="../css/base-style.css" rel="stylesheet" type="text/css"/>
+<link href="../css/style.css" rel="stylesheet" type="text/css"/>
+<script src="../js/report.js" type="text/javascript"></script>
+</head>
+<body>
+<div id="content">
+<h1>RecipeServiceUTest</h1>
+<div class="breadcrumbs">
+<a href="../index.html">all</a> &gt; 
+<a href="../packages/service.html">service</a> &gt; RecipeServiceUTest</div>
+<div id="summary">
+<table>
+<tr>
+<td>
+<div class="summaryGroup">
+<table>
+<tr>
+<td>
+<div class="infoBox" id="tests">
+<div class="counter">11</div>
+<p>tests</p>
+</div>
+</td>
+<td>
+<div class="infoBox" id="failures">
+<div class="counter">0</div>
+<p>failures</p>
+</div>
+</td>
+<td>
+<div class="infoBox" id="ignored">
+<div class="counter">0</div>
+<p>ignored</p>
+</div>
+</td>
+<td>
+<div class="infoBox" id="duration">
+<div class="counter">1.919s</div>
+<p>duration</p>
+</div>
+</td>
+</tr>
+</table>
+</div>
+</td>
+<td>
+<div class="infoBox success" id="successRate">
+<div class="percent">100%</div>
+<p>successful</p>
+</div>
+</td>
+</tr>
+</table>
+</div>
+<div id="tabs">
+<ul class="tabLinks">
+<li>
+<a href="#tab0">Tests</a>
+</li>
+<li>
+<a href="#tab1">Standard output</a>
+</li>
+<li>
+<a href="#tab2">Standard error</a>
+</li>
+</ul>
+<div id="tab0" class="tab">
+<h2>Tests</h2>
+<table>
+<thead>
+<tr>
+<th>Test</th>
+<th>Duration</th>
+<th>Result</th>
+</tr>
+</thead>
+<tr>
+<td class="success">givenImageFile_whenCreateRecipe_thenProcessImage()</td>
+<td class="success">0.008s</td>
+<td class="success">passed</td>
+</tr>
+<tr>
+<td class="success">givenIngredients_whenGenerateMeal_thenReturnGeneratedRecipe()</td>
+<td class="success">0.008s</td>
+<td class="success">passed</td>
+</tr>
+<tr>
+<td class="success">givenInvalidId_whenGetRecipeById_thenThrowRecipeNotFoundException()</td>
+<td class="success">0.005s</td>
+<td class="success">passed</td>
+</tr>
+<tr>
+<td class="success">givenInvalidOwner_whenDeleteRecipe_thenThrowUnauthorizedException()</td>
+<td class="success">0.006s</td>
+<td class="success">passed</td>
+</tr>
+<tr>
+<td class="success">givenInvalidOwner_whenUpdateRecipe_thenThrowUnauthorizedException()</td>
+<td class="success">0.009s</td>
+<td class="success">passed</td>
+</tr>
+<tr>
+<td class="success">givenKeyword_whenSearchRecipes_thenReturnMatchedRecipes()</td>
+<td class="success">0.004s</td>
+<td class="success">passed</td>
+</tr>
+<tr>
+<td class="success">givenValidId_whenGetRecipeById_thenReturnRecipeResponse()</td>
+<td class="success">0.006s</td>
+<td class="success">passed</td>
+</tr>
+<tr>
+<td class="success">givenValidOwner_whenDeleteRecipe_thenCallDeleteRepository()</td>
+<td class="success">1.825s</td>
+<td class="success">passed</td>
+</tr>
+<tr>
+<td class="success">givenValidOwner_whenUpdateRecipe_thenUpdateRecipe()</td>
+<td class="success">0.027s</td>
+<td class="success">passed</td>
+</tr>
+<tr>
+<td class="success">givenValidPagination_whenGetAllRecipes_thenReturnPagedRecipes()</td>
+<td class="success">0.014s</td>
+<td class="success">passed</td>
+</tr>
+<tr>
+<td class="success">givenValidRequest_whenCreateRecipe_thenReturnRecipeResponse()</td>
+<td class="success">0.007s</td>
+<td class="success">passed</td>
+</tr>
+</table>
+</div>
+<div id="tab1" class="tab">
+<h2>Standard output</h2>
+<span class="code">
+<pre>12:52:23.917 [Test worker] INFO dev.idachev.recipeservice.service.RecipeService -- Recipe with ID d9c866a8-8550-45ff-b38e-02156bad8ef3 deleted successfully
+12:52:23.967 [Test worker] INFO dev.idachev.recipeservice.service.RecipeService -- Updated recipe with ID: f1cdd37d-9bcb-4222-b1e5-d21ee0bb9669
+12:52:23.987 [Test worker] INFO dev.idachev.recipeservice.service.RecipeService -- Created recipe with ID: afa1b32f-2d21-44d8-be0e-ce446bc69698
+12:52:23.998 [Test worker] INFO dev.idachev.recipeservice.service.RecipeService -- Generating meal from 3 ingredients
+12:52:24.008 [Test worker] WARN dev.idachev.recipeservice.service.RecipeService -- Unauthorized access attempt: User d3a3790a-9d04-4ece-a239-7fec046c72bb attempted to access recipe e42f8c45-de4f-4e08-a063-64231348749b
+12:52:24.037 [Test worker] INFO dev.idachev.recipeservice.service.RecipeService -- Created recipe with ID: fba01160-8dbd-4074-9684-026eb38351f7
+12:52:24.044 [Test worker] WARN dev.idachev.recipeservice.service.RecipeService -- Unauthorized access attempt: User 2dcd849e-aad5-46eb-bbff-0e8dc92623fa attempted to access recipe 6812e3ff-8c1a-41d7-a0eb-c461cea6c67f
+</pre>
+</span>
+</div>
+<div id="tab2" class="tab">
+<h2>Standard error</h2>
+<span class="code">
+<pre>WARNING: A Java agent has been loaded dynamically (C:\Users\pffe3\.gradle\caches\modules-2\files-2.1\net.bytebuddy\byte-buddy-agent\1.14.13\979ce25f7d3096a2e82214ba7dc972a05ce7a171\byte-buddy-agent-1.14.13.jar)
+WARNING: If a serviceability tool is in use, please run with -XX:+EnableDynamicAgentLoading to hide this warning
+WARNING: If a serviceability tool is not in use, please run with -Djdk.instrument.traceUsage for more information
+WARNING: Dynamic loading of agents will be disallowed by default in a future release
+</pre>
+</span>
+</div>
+</div>
+<div id="footer">
+<p>
+<div>
+<label class="hidden" id="label-for-line-wrapping-toggle" for="line-wrapping-toggle">Wrap lines
+<input id="line-wrapping-toggle" type="checkbox" autocomplete="off"/>
+</label>
+</div>Generated by 
+<a href="http://www.gradle.org">Gradle 8.10</a> at Mar 19, 2025, 12:52:24 PM</p>
+</div>
+</div>
+</body>
+</html>

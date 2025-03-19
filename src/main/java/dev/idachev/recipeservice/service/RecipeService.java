@@ -2,7 +2,6 @@ package dev.idachev.recipeservice.service;
 
 import dev.idachev.recipeservice.exception.ResourceNotFoundException;
 import dev.idachev.recipeservice.exception.UnauthorizedAccessException;
-import dev.idachev.recipeservice.exception.ValidationException;
 import dev.idachev.recipeservice.infrastructure.ai.AIService;
 import dev.idachev.recipeservice.mapper.RecipeMapper;
 import dev.idachev.recipeservice.model.Recipe;
@@ -14,6 +13,7 @@ import dev.idachev.recipeservice.web.dto.SimplifiedRecipeResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -22,6 +22,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 @Service
@@ -36,7 +37,13 @@ public class RecipeService {
     private final AIService aiService;
     private final RecipeMapper recipeMapper;
 
-    public RecipeService(RecipeRepository recipeRepository, FavoriteRecipeRepository favoriteRecipeRepository, RecipeImageService recipeImageService, RecipeSearchService recipeSearchService, AIService aiService, RecipeMapper recipeMapper) {
+    @Autowired
+    public RecipeService(RecipeRepository recipeRepository, 
+                         FavoriteRecipeRepository favoriteRecipeRepository, 
+                         RecipeImageService recipeImageService, 
+                         RecipeSearchService recipeSearchService, 
+                         AIService aiService, 
+                         RecipeMapper recipeMapper) {
         this.recipeRepository = recipeRepository;
         this.favoriteRecipeRepository = favoriteRecipeRepository;
         this.recipeImageService = recipeImageService;
@@ -52,13 +59,10 @@ public class RecipeService {
      * @param image   Optional image file for the recipe
      * @param userId  ID of the user creating the recipe
      * @return Created recipe response with enhanced information
-     * @throws ValidationException if request validation fails
      */
     @Operation(summary = "Create a new recipe with optional image upload")
     @Transactional
     public RecipeResponse createRecipe(RecipeRequest request, MultipartFile image, UUID userId) {
-        validateRequest(request, userId);
-
         // Process image if provided
         processImageIfPresent(request, image);
 
@@ -92,40 +96,11 @@ public class RecipeService {
     }
 
     /**
-     * Validate recipe request and user ID
-     *
-     * @throws ValidationException if validation fails
-     */
-    private void validateRequest(RecipeRequest request, UUID userId) {
-        if (request == null) {
-            throw new ValidationException("Recipe request cannot be null");
-        }
-
-        if (userId == null) {
-            throw new ValidationException("User ID cannot be null");
-        }
-
-        // Additional validation logic
-        if (request.getTitle() == null || request.getTitle().trim().isEmpty()) {
-            throw new ValidationException("Recipe title cannot be empty");
-        }
-
-        if (request.getInstructions() == null || request.getInstructions().trim().isEmpty()) {
-            throw new ValidationException("Recipe instructions cannot be empty");
-        }
-
-        if (request.getIngredients() == null || request.getIngredients().isEmpty()) {
-            throw new ValidationException("Recipe must have at least one ingredient");
-        }
-    }
-
-    /**
      * Create a recipe without image upload.
      *
      * @param request Recipe data to create
      * @param userId  ID of the user creating the recipe
      * @return Created recipe response with enhanced information
-     * @throws ValidationException if request validation fails
      */
     @Operation(summary = "Create a recipe without image upload")
     @Transactional
@@ -139,16 +114,11 @@ public class RecipeService {
      * @param id     Recipe ID
      * @param userId Optional user ID for favorite information
      * @return Recipe response with enhanced information
-     * @throws ValidationException       if ID is null
      * @throws ResourceNotFoundException if recipe not found
      */
     @Operation(summary = "Get a recipe by ID")
     @Transactional(readOnly = true)
     public RecipeResponse getRecipeById(UUID id, UUID userId) {
-        if (id == null) {
-            throw new ValidationException("Recipe ID cannot be null");
-        }
-
         Recipe recipe = findRecipeByIdOrThrow(id);
         return enhanceWithFavoriteInfo(recipeMapper.toResponse(recipe), userId);
     }
@@ -165,7 +135,6 @@ public class RecipeService {
                 .orElseThrow(() -> new ResourceNotFoundException("Recipe not found with id: " + id));
     }
 
-
     /**
      * Get all recipes with pagination and favorite information.
      *
@@ -179,21 +148,15 @@ public class RecipeService {
         return recipeSearchService.getAllRecipes(pageable, userId);
     }
 
-
     /**
      * Get recipes by user ID.
      *
      * @param userId User ID
      * @return List of recipes created by the user
-     * @throws ValidationException if user ID is null
      */
     @Operation(summary = "Get recipes by user ID")
     @Transactional(readOnly = true)
     public List<RecipeResponse> getRecipesByUserId(UUID userId) {
-        if (userId == null) {
-            throw new ValidationException("User ID cannot be null");
-        }
-
         return recipeRepository.findByUserId(userId).stream()
                 .map(recipeMapper::toResponse)
                 .map(response -> enhanceWithFavoriteInfo(response, userId))
@@ -207,25 +170,12 @@ public class RecipeService {
      * @param request Updated recipe data
      * @param userId  ID of the user updating the recipe
      * @return Updated recipe response
-     * @throws ValidationException         if validation fails
      * @throws ResourceNotFoundException   if recipe not found
      * @throws UnauthorizedAccessException if user doesn't own the recipe
      */
     @Operation(summary = "Update an existing recipe")
     @Transactional
     public RecipeResponse updateRecipe(UUID id, RecipeRequest request, UUID userId) {
-        if (id == null) {
-            throw new ValidationException("Recipe ID cannot be null");
-        }
-
-        if (request == null) {
-            throw new ValidationException("Recipe request cannot be null");
-        }
-
-        if (userId == null) {
-            throw new ValidationException("User ID cannot be null");
-        }
-
         Recipe recipe = checkRecipePermission(id, userId);
 
         recipeMapper.updateEntityFromRequest(recipe, request);
@@ -242,7 +192,6 @@ public class RecipeService {
      *
      * @param id     Recipe ID to delete
      * @param userId ID of the user deleting the recipe
-     * @throws ValidationException         if validation fails
      * @throws ResourceNotFoundException   if recipe not found
      * @throws UnauthorizedAccessException if user doesn't own the recipe
      */
@@ -265,9 +214,6 @@ public class RecipeService {
     @Operation(summary = "Search recipes by keyword")
     @Transactional(readOnly = true)
     public Page<RecipeResponse> searchRecipes(String keyword, Pageable pageable, UUID userId) {
-        if (pageable == null) {
-            throw new ValidationException("Pageable cannot be null");
-        }
         return recipeSearchService.searchRecipes(keyword, pageable, userId);
     }
 
@@ -276,15 +222,10 @@ public class RecipeService {
      *
      * @param ingredients List of ingredients
      * @return Generated recipe response
-     * @throws ValidationException if ingredients list is empty
      */
     @Operation(summary = "Generate a recipe from ingredients")
     public SimplifiedRecipeResponse generateMeal(List<String> ingredients) {
-
-        if (ingredients == null || ingredients.isEmpty()) {
-            throw new ValidationException("Ingredients list cannot be empty");
-        }
-        log.info("Generating meal from {} ingredients", ingredients.size());
+        log.info("Generating meal from {} ingredients", Optional.ofNullable(ingredients).map(List::size).orElse(0));
         return aiService.generateRecipeFromIngredients(ingredients);
     }
 
@@ -294,19 +235,10 @@ public class RecipeService {
      * @param recipeId Recipe ID
      * @param userId   User ID
      * @return Recipe if user has permission
-     * @throws ValidationException         if validation fails
      * @throws ResourceNotFoundException   if recipe not found
      * @throws UnauthorizedAccessException if user doesn't own the recipe
      */
     private Recipe checkRecipePermission(UUID recipeId, UUID userId) {
-        if (recipeId == null) {
-            throw new ValidationException("Recipe ID cannot be null");
-        }
-
-        if (userId == null) {
-            throw new ValidationException("User ID cannot be null");
-        }
-
         Recipe recipe = findRecipeByIdOrThrow(recipeId);
 
         if (!recipe.getUserId().equals(userId)) {
