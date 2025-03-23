@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="dev.idachev.recipeservice.user.UserServiceUTest" tests="8" skipped="0" failures="0" errors="0" timestamp="2025-03-23T07:50:24" hostname="DACHEV" time="0.107">
+  <properties/>
+  <testcase name="givenValidToken_whenGetUserIdFromToken_thenReturnUserId()" classname="dev.idachev.recipeservice.user.UserServiceUTest" time="0.087"/>
+  <testcase name="givenValidToken_whenGetCurrentUser_thenReturnUserDTO()" classname="dev.idachev.recipeservice.user.UserServiceUTest" time="0.002"/>
+  <testcase name="givenInvalidToken_whenGetCurrentUser_thenThrowUnauthorizedException()" classname="dev.idachev.recipeservice.user.UserServiceUTest" time="0.003"/>
+  <testcase name="givenFeignClientError_whenGetCurrentUser_thenThrowFeignClientException()" classname="dev.idachev.recipeservice.user.UserServiceUTest" time="0.002"/>
+  <testcase name="givenDifferentUsernames_whenGetUserIdFromUsername_thenReturnDifferentUUIDs()" classname="dev.idachev.recipeservice.user.UserServiceUTest" time="0.003"/>
+  <testcase name="givenEmptyUsername_whenGetUserIdFromUsername_thenThrowIllegalArgumentException()" classname="dev.idachev.recipeservice.user.UserServiceUTest" time="0.002"/>
+  <testcase name="givenUsername_whenGetUserIdFromUsername_thenReturnConsistentUUID()" classname="dev.idachev.recipeservice.user.UserServiceUTest" time="0.002"/>
+  <testcase name="givenNullUsername_whenGetUserIdFromUsername_thenThrowNullPointerException()" classname="dev.idachev.recipeservice.user.UserServiceUTest" time="0.002"/>
+  <system-out><![CDATA[09:50:24.705 [Test worker] ERROR dev.idachev.recipeservice.user.service.UserService -- Error authenticating user: Invalid authentication token
+09:50:24.708 [Test worker] ERROR dev.idachev.recipeservice.user.service.UserService -- Error from user-service: Service unavailable
+]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

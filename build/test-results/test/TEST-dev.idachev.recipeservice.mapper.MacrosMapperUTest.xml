@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="dev.idachev.recipeservice.mapper.MacrosMapperUTest" tests="10" skipped="0" failures="0" errors="0" timestamp="2025-03-23T07:50:23" hostname="DACHEV" time="0.016">
+  <properties/>
+  <testcase name="givenCompleteMacrosDto_whenToEntity_thenReturnMappedEntity()" classname="dev.idachev.recipeservice.mapper.MacrosMapperUTest" time="0.003"/>
+  <testcase name="givenNullMacrosDto_whenToEntity_thenReturnNull()" classname="dev.idachev.recipeservice.mapper.MacrosMapperUTest" time="0.001"/>
+  <testcase name="givenMacrosEntityAndDto_whenUpdateEntityFromDto_thenUpdateEntityCorrectly()" classname="dev.idachev.recipeservice.mapper.MacrosMapperUTest" time="0.0"/>
+  <testcase name="givenNullMacrosEntity_whenUpdateEntityFromDto_thenThrowIllegalArgumentException()" classname="dev.idachev.recipeservice.mapper.MacrosMapperUTest" time="0.001"/>
+  <testcase name="givenMacrosDtoWithNullFields_whenToEntity_thenHandleNullsGracefully()" classname="dev.idachev.recipeservice.mapper.MacrosMapperUTest" time="0.001"/>
+  <testcase name="givenMacrosWithNullFields_whenToDto_thenHandleNullsGracefully()" classname="dev.idachev.recipeservice.mapper.MacrosMapperUTest" time="0.001"/>
+  <testcase name="givenCompleteMacros_whenToDto_thenReturnMappedDto()" classname="dev.idachev.recipeservice.mapper.MacrosMapperUTest" time="0.0"/>
+  <testcase name="givenNullMacros_whenToDto_thenReturnNull()" classname="dev.idachev.recipeservice.mapper.MacrosMapperUTest" time="0.001"/>
+  <testcase name="givenMacrosEntityAndNullDto_whenUpdateEntityFromDto_thenDoNotModifyEntity()" classname="dev.idachev.recipeservice.mapper.MacrosMapperUTest" time="0.001"/>
+  <testcase name="givenMacrosEntityAndDtoWithNullFields_whenUpdateEntityFromDto_thenUpdateWithNulls()" classname="dev.idachev.recipeservice.mapper.MacrosMapperUTest" time="0.001"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

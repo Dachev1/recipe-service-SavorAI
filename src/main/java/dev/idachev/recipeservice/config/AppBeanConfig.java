@@ -17,16 +17,23 @@ import java.util.concurrent.ConcurrentHashMap;
 @Slf4j
 public class AppBeanConfig {
 
-    @Value("${cors.allowed-origins}") private String allowedOrigins;
-    @Value("${cors.allowed-methods}") private String allowedMethods;
-    @Value("${cors.allowed-headers}") private String allowedHeaders;
-    @Value("${cors.allow-credentials}") private boolean allowCredentials;
+    @Value("${cors.allowed-origins}")
+    private String allowedOrigins;
+
+    @Value("${cors.allowed-methods}")
+    private String allowedMethods;
+
+    @Value("${cors.allowed-headers}")
+    private String allowedHeaders;
+
+    @Value("${cors.allow-credentials}")
+    private boolean allowCredentials;
 
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
 
         log.info("Configuring CORS with origins: {}", allowedOrigins);
-        
+
         CorsConfiguration config = new CorsConfiguration();
         config.setAllowedOrigins(Arrays.asList(allowedOrigins.split(",")));
         config.setAllowedMethods(Arrays.asList(allowedMethods.split(",")));
@@ -34,7 +41,7 @@ public class AppBeanConfig {
         config.setAllowCredentials(allowCredentials);
         config.setMaxAge(3600L);
         config.setExposedHeaders(List.of("Authorization", "Content-Type"));
-        
+
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", config);
         return source;

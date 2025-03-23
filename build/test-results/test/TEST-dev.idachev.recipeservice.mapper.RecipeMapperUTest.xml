@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="dev.idachev.recipeservice.mapper.RecipeMapperUTest" tests="10" skipped="0" failures="0" errors="0" timestamp="2025-03-23T07:50:23" hostname="DACHEV" time="0.674">
+  <properties/>
+  <testcase name="givenRecipeAndPartialRequest_whenUpdateEntityFromRequest_thenOnlyUpdateProvidedFields()" classname="dev.idachev.recipeservice.mapper.RecipeMapperUTest" time="0.631"/>
+  <testcase name="givenNullRequest_whenUpdateEntityFromRequest_thenThrowIllegalArgumentException()" classname="dev.idachev.recipeservice.mapper.RecipeMapperUTest" time="0.004"/>
+  <testcase name="givenNullRecipe_whenToResponse_thenThrowIllegalArgumentException()" classname="dev.idachev.recipeservice.mapper.RecipeMapperUTest" time="0.005"/>
+  <testcase name="givenRecipeAndRequest_whenUpdateEntityFromRequest_thenUpdateEntityCorrectly()" classname="dev.idachev.recipeservice.mapper.RecipeMapperUTest" time="0.006"/>
+  <testcase name="givenRecipeRequestWithNullFields_whenToEntity_thenHandleNullsGracefully()" classname="dev.idachev.recipeservice.mapper.RecipeMapperUTest" time="0.005"/>
+  <testcase name="givenCompleteRecipe_whenToResponse_thenReturnMappedResponse()" classname="dev.idachev.recipeservice.mapper.RecipeMapperUTest" time="0.004"/>
+  <testcase name="givenRecipeWithNullFields_whenToResponse_thenHandleNullsGracefully()" classname="dev.idachev.recipeservice.mapper.RecipeMapperUTest" time="0.004"/>
+  <testcase name="givenNullRecipe_whenUpdateEntityFromRequest_thenThrowIllegalArgumentException()" classname="dev.idachev.recipeservice.mapper.RecipeMapperUTest" time="0.003"/>
+  <testcase name="givenNullRecipeRequest_whenToEntity_thenThrowIllegalArgumentException()" classname="dev.idachev.recipeservice.mapper.RecipeMapperUTest" time="0.004"/>
+  <testcase name="givenCompleteRecipeRequest_whenToEntity_thenReturnMappedEntity()" classname="dev.idachev.recipeservice.mapper.RecipeMapperUTest" time="0.002"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

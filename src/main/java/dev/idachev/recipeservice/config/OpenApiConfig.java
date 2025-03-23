@@ -16,26 +16,26 @@ public class OpenApiConfig {
     @Bean
     public OpenAPI customOpenAPI() {
         final String securitySchemeName = "bearerAuth";
-        
+
         return new OpenAPI()
                 .info(new Info()
-                    .title("SavorAI Recipe API")
-                    .description("API for recipe generation using OpenAI integration")
-                    .version("1.0")
-                    .contact(new Contact()
-                        .name("SavorAI Team")
-                        .email("appsavorai@gmail.com")
-                        .url("https://savorai.example.com"))
-                    .license(new License()
-                        .name("MIT License")
-                        .url("https://opensource.org/licenses/MIT")))
+                        .title("SavorAI Recipe API")
+                        .description("API for recipe generation using OpenAI integration")
+                        .version("1.0")
+                        .contact(new Contact()
+                                .name("SavorAI Team")
+                                .email("appsavorai@gmail.com")
+                                .url("https://savorai.example.com"))
+                        .license(new License()
+                                .name("MIT License")
+                                .url("https://opensource.org/licenses/MIT")))
                 .addSecurityItem(new SecurityRequirement().addList(securitySchemeName))
                 .components(new Components()
-                    .addSecuritySchemes(securitySchemeName, new SecurityScheme()
-                        .name(securitySchemeName)
-                        .type(SecurityScheme.Type.HTTP)
-                        .scheme("bearer")
-                        .bearerFormat("JWT")
-                        .description("JWT Auth header using Bearer scheme")));
+                        .addSecuritySchemes(securitySchemeName, new SecurityScheme()
+                                .name(securitySchemeName)
+                                .type(SecurityScheme.Type.HTTP)
+                                .scheme("bearer")
+                                .bearerFormat("JWT")
+                                .description("JWT Auth header using Bearer scheme")));
     }
 } 

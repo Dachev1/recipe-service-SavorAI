@@ -28,14 +28,14 @@ public class JwtKeyConfig {
     public void init() {
         try {
             byte[] secretBytes = secret.getBytes(StandardCharsets.UTF_8);
-            
+
             // Ensure key is long enough for HS384 (needs at least 48 bytes)
             if (secretBytes.length < 48) {
                 byte[] paddedKey = new byte[48];
                 System.arraycopy(secretBytes, 0, paddedKey, 0, secretBytes.length);
                 secretBytes = paddedKey;
             }
-            
+
             this.signingKey = Keys.hmacShaKeyFor(secretBytes);
             log.info("JWT signing key initialized successfully");
         } catch (Exception e) {

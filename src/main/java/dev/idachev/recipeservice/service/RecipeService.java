@@ -10,8 +10,6 @@ import dev.idachev.recipeservice.repository.RecipeRepository;
 import dev.idachev.recipeservice.web.dto.RecipeRequest;
 import dev.idachev.recipeservice.web.dto.RecipeResponse;
 import dev.idachev.recipeservice.web.dto.SimplifiedRecipeResponse;
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -22,12 +20,14 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
 
+/**
+ * Service for recipe management operations.
+ * Follows Single Responsibility Principle by focusing only on recipe business logic.
+ */
 @Service
 @Slf4j
-@Tag(name = "Recipe Service", description = "Manages recipe operations")
 public class RecipeService {
 
     private final RecipeRepository recipeRepository;
@@ -38,11 +38,11 @@ public class RecipeService {
     private final RecipeMapper recipeMapper;
 
     @Autowired
-    public RecipeService(RecipeRepository recipeRepository, 
-                         FavoriteRecipeRepository favoriteRecipeRepository, 
-                         RecipeImageService recipeImageService, 
-                         RecipeSearchService recipeSearchService, 
-                         AIService aiService, 
+    public RecipeService(RecipeRepository recipeRepository,
+                         FavoriteRecipeRepository favoriteRecipeRepository,
+                         RecipeImageService recipeImageService,
+                         RecipeSearchService recipeSearchService,
+                         AIService aiService,
                          RecipeMapper recipeMapper) {
         this.recipeRepository = recipeRepository;
         this.favoriteRecipeRepository = favoriteRecipeRepository;
@@ -54,19 +54,11 @@ public class RecipeService {
 
     /**
      * Create a new recipe with an optional image upload.
-     *
-     * @param request Recipe data to create
-     * @param image   Optional image file for the recipe
-     * @param userId  ID of the user creating the recipe
-     * @return Created recipe response with enhanced information
      */
-    @Operation(summary = "Create a new recipe with optional image upload")
     @Transactional
     public RecipeResponse createRecipe(RecipeRequest request, MultipartFile image, UUID userId) {
-        // Process image if provided
         processImageIfPresent(request, image);
 
-        // Create and save recipe
         Recipe recipe = recipeMapper.toEntity(request);
         recipe.setUserId(userId);
         recipe.setCreatedAt(LocalDateTime.now());
@@ -88,7 +80,6 @@ public class RecipeService {
 
             if (imageUrl != null && !imageUrl.isEmpty()) {
                 request.setImageUrl(imageUrl);
-                log.debug("Image processed and URL attached to recipe request");
             } else {
                 log.warn("Image processing returned null or empty URL");
             }
@@ -97,12 +88,7 @@ public class RecipeService {
 
     /**
      * Create a recipe without image upload.
-     *
-     * @param request Recipe data to create
-     * @param userId  ID of the user creating the recipe
-     * @return Created recipe response with enhanced information
      */
-    @Operation(summary = "Create a recipe without image upload")
     @Transactional
     public RecipeResponse createRecipe(RecipeRequest request, UUID userId) {
         return createRecipe(request, null, userId);
@@ -110,13 +96,7 @@ public class RecipeService {
 
     /**
      * Get a recipe by ID.
-     *
-     * @param id     Recipe ID
-     * @param userId Optional user ID for favorite information
-     * @return Recipe response with enhanced information
-     * @throws ResourceNotFoundException if recipe not found
      */
-    @Operation(summary = "Get a recipe by ID")
     @Transactional(readOnly = true)
     public RecipeResponse getRecipeById(UUID id, UUID userId) {
         Recipe recipe = findRecipeByIdOrThrow(id);
@@ -125,10 +105,6 @@ public class RecipeService {
 
     /**
      * Find a recipe by ID or throw an exception if not found
-     *
-     * @param id Recipe ID
-     * @return Recipe if found
-     * @throws ResourceNotFoundException if recipe not found
      */
     private Recipe findRecipeByIdOrThrow(UUID id) {
         return recipeRepository.findById(id)
@@ -137,12 +113,7 @@ public class RecipeService {
 
     /**
      * Get all recipes with pagination and favorite information.
-     *
-     * @param pageable Pagination information
-     * @param userId   Optional user ID for favorite information
-     * @return Paged list of recipes
      */
-    @Operation(summary = "Get all recipes with pagination")
     @Transactional(readOnly = true)
     public Page<RecipeResponse> getAllRecipes(Pageable pageable, UUID userId) {
         return recipeSearchService.getAllRecipes(pageable, userId);
@@ -150,11 +121,7 @@ public class RecipeService {
 
     /**
      * Get recipes by user ID.
-     *
-     * @param userId User ID
-     * @return List of recipes created by the user
      */
-    @Operation(summary = "Get recipes by user ID")
     @Transactional(readOnly = true)
     public List<RecipeResponse> getRecipesByUserId(UUID userId) {
         return recipeRepository.findByUserId(userId).stream()
@@ -165,15 +132,7 @@ public class RecipeService {
 
     /**
      * Update an existing recipe.
-     *
-     * @param id      Recipe ID to update
-     * @param request Updated recipe data
-     * @param userId  ID of the user updating the recipe
-     * @return Updated recipe response
-     * @throws ResourceNotFoundException   if recipe not found
-     * @throws UnauthorizedAccessException if user doesn't own the recipe
      */
-    @Operation(summary = "Update an existing recipe")
     @Transactional
     public RecipeResponse updateRecipe(UUID id, RecipeRequest request, UUID userId) {
         Recipe recipe = checkRecipePermission(id, userId);
@@ -189,13 +148,7 @@ public class RecipeService {
 
     /**
      * Delete a recipe.
-     *
-     * @param id     Recipe ID to delete
-     * @param userId ID of the user deleting the recipe
-     * @throws ResourceNotFoundException   if recipe not found
-     * @throws UnauthorizedAccessException if user doesn't own the recipe
      */
-    @Operation(summary = "Delete a recipe")
     @Transactional
     public void deleteRecipe(UUID id, UUID userId) {
         Recipe recipe = checkRecipePermission(id, userId);
@@ -205,13 +158,7 @@ public class RecipeService {
 
     /**
      * Search recipes by keyword.
-     *
-     * @param keyword  Search keyword
-     * @param pageable Pagination information
-     * @param userId   Optional user ID for favorite information
-     * @return Paged list of matching recipes
      */
-    @Operation(summary = "Search recipes by keyword")
     @Transactional(readOnly = true)
     public Page<RecipeResponse> searchRecipes(String keyword, Pageable pageable, UUID userId) {
         return recipeSearchService.searchRecipes(keyword, pageable, userId);
@@ -219,24 +166,14 @@ public class RecipeService {
 
     /**
      * Generate a meal from ingredients
-     *
-     * @param ingredients List of ingredients
-     * @return Generated recipe response
      */
-    @Operation(summary = "Generate a recipe from ingredients")
     public SimplifiedRecipeResponse generateMeal(List<String> ingredients) {
-        log.info("Generating meal from {} ingredients", Optional.ofNullable(ingredients).map(List::size).orElse(0));
+        log.info("Generating meal from {} ingredients", ingredients != null ? ingredients.size() : 0);
         return aiService.generateRecipeFromIngredients(ingredients);
     }
 
     /**
      * Check if a user has permission to modify a recipe.
-     *
-     * @param recipeId Recipe ID
-     * @param userId   User ID
-     * @return Recipe if user has permission
-     * @throws ResourceNotFoundException   if recipe not found
-     * @throws UnauthorizedAccessException if user doesn't own the recipe
      */
     private Recipe checkRecipePermission(UUID recipeId, UUID userId) {
         Recipe recipe = findRecipeByIdOrThrow(recipeId);
@@ -251,10 +188,6 @@ public class RecipeService {
 
     /**
      * Enhance a recipe response with favorite information.
-     *
-     * @param response Recipe response to enhance
-     * @param userId   Optional user ID for favorite information
-     * @return Enhanced recipe response
      */
     private RecipeResponse enhanceWithFavoriteInfo(RecipeResponse response, UUID userId) {
         if (response == null) {
@@ -262,14 +195,14 @@ public class RecipeService {
         }
 
         try {
-            // Set favorite count
-            long favoriteCount = favoriteRecipeRepository.countByRecipeId(response.getId());
-            response.setFavoriteCount(favoriteCount);
+            response.setFavoriteCount(favoriteRecipeRepository.countByRecipeId(response.getId()));
 
-            // Set is favorite for the current user if userId is provided
-            boolean isFavorite = userId != null &&
-                    favoriteRecipeRepository.existsByUserIdAndRecipeId(userId, response.getId());
-            response.setIsFavorite(isFavorite);
+            if (userId != null) {
+                boolean isFavorite = favoriteRecipeRepository.existsByUserIdAndRecipeId(userId, response.getId());
+                response.setIsFavorite(isFavorite);
+            } else {
+                response.setIsFavorite(false);
+            }
         } catch (Exception e) {
             log.warn("Error enhancing recipe {} with favorite info: {}", response.getId(), e.getMessage());
             response.setFavoriteCount(0L);

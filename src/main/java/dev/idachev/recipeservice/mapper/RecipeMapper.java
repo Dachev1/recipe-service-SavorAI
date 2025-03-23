@@ -27,7 +27,8 @@ public class RecipeMapper {
 
     private final ObjectMapper objectMapper;
     private static final String EMPTY_JSON_ARRAY = "[]";
-    private static final TypeReference<List<String>> INGREDIENTS_TYPE = new TypeReference<>() {};
+    private static final TypeReference<List<String>> INGREDIENTS_TYPE = new TypeReference<>() {
+    };
 
     @Autowired
     public RecipeMapper(ObjectMapper objectMapper) {

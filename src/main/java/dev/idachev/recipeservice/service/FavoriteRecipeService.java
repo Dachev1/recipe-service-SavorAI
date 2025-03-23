@@ -8,13 +8,13 @@ import dev.idachev.recipeservice.model.Recipe;
 import dev.idachev.recipeservice.repository.FavoriteRecipeRepository;
 import dev.idachev.recipeservice.repository.RecipeRepository;
 import dev.idachev.recipeservice.web.dto.FavoriteRecipeDto;
-import dev.idachev.recipeservice.web.dto.RecipeResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 
 import java.time.LocalDateTime;
 import java.util.Collections;
@@ -54,79 +54,55 @@ public class FavoriteRecipeService {
     public FavoriteRecipeDto addToFavorites(UUID userId, UUID recipeId) {
         // Check if already in favorites
         if (favoriteRecipeRepository.existsByUserIdAndRecipeId(userId, recipeId)) {
-            log.info("Recipe {} is already in favorites for user {}", recipeId, userId);
+            log.info("Recipe {} already in favorites for user {}", recipeId, userId);
             return getFavoriteRecipeDto(userId, recipeId);
         }
 
-        // Get recipe and ensure it exists
         Recipe recipe = findRecipeByIdOrThrow(recipeId);
-
-        // Ensure AI-generated recipes have images
         ensureRecipeHasImage(recipe);
 
-        // Create and save favorite recipe
-        FavoriteRecipe favoriteRecipe = createFavoriteRecipe(userId, recipe);
+        FavoriteRecipe favoriteRecipe = FavoriteRecipeMapper.create(userId, recipe);
+        favoriteRecipeRepository.save(favoriteRecipe);
+
         log.info("Added recipe {} to favorites for user {}", recipeId, userId);
 
-        // Map to DTO with recipe details
-        RecipeResponse recipeResponse = recipeMapper.toResponse(recipe);
-        return FavoriteRecipeMapper.toDto(favoriteRecipe, recipeResponse);
+        return FavoriteRecipeMapper.toDtoWithRecipe(favoriteRecipe, recipe, recipeMapper);
     }
 
-    /**
-     * Create and save a favorite recipe entity.
-     */
-    private FavoriteRecipe createFavoriteRecipe(UUID userId, Recipe recipe) {
-        FavoriteRecipe favoriteRecipe = FavoriteRecipeMapper.create(userId, recipe);
-        favoriteRecipe.setAddedAt(LocalDateTime.now());
-        return favoriteRecipeRepository.save(favoriteRecipe);
-    }
-
-    /**
-     * Ensure AI-generated recipe has an image.
-     */
     private void ensureRecipeHasImage(Recipe recipe) {
-        if (Boolean.TRUE.equals(recipe.getIsAiGenerated()) &&
-                (recipe.getImageUrl() == null || recipe.getImageUrl().isEmpty())) {
-            log.info("AI-generated recipe {} has no image URL. Generating one.", recipe.getId());
-            String imageUrl = recipeImageService.generateRecipeImage(recipe.getTitle(), recipe.getDescription());
+        if (!StringUtils.hasText(recipe.getImageUrl())) {
+            try {
+                String generatedImageUrl = recipeImageService.generateRecipeImage(
+                        recipe.getTitle(),
+                        recipe.getDescription());
 
-            if (imageUrl != null && !imageUrl.isEmpty()) {
-                recipe.setImageUrl(imageUrl);
-                recipeRepository.save(recipe);
-                log.debug("Generated and saved image URL for recipe {}", recipe.getId());
-            } else {
-                log.warn("Failed to generate image for recipe {}", recipe.getId());
+                if (StringUtils.hasText(generatedImageUrl)) {
+                    recipe.setImageUrl(generatedImageUrl);
+                    recipe.setUpdatedAt(LocalDateTime.now());
+                    recipeRepository.save(recipe);
+                    log.info("Generated image for recipe {}", recipe.getId());
+                }
+            } catch (Exception e) {
+                log.warn("Failed to generate image for recipe {}: {}", recipe.getId(), e.getMessage());
             }
         }
     }
 
-    /**
-     * Find recipe by ID or throw exception.
-     */
     private Recipe findRecipeByIdOrThrow(UUID recipeId) {
         return recipeRepository.findById(recipeId)
-                .orElseThrow(() -> new ResourceNotFoundException("Recipe not found: " + recipeId));
+                .orElseThrow(() -> new ResourceNotFoundException("Recipe not found with id: " + recipeId));
     }
 
-    /**
-     * Get a favorite recipe DTO.
-     */
     private FavoriteRecipeDto getFavoriteRecipeDto(UUID userId, UUID recipeId) {
-        FavoriteRecipe favoriteRecipe = findFavoriteByUserAndRecipeOrThrow(userId, recipeId);
+        FavoriteRecipe favorite = findFavoriteByUserAndRecipeOrThrow(userId, recipeId);
         Recipe recipe = findRecipeByIdOrThrow(recipeId);
-
-        RecipeResponse recipeResponse = recipeMapper.toResponse(recipe);
-        return FavoriteRecipeMapper.toDto(favoriteRecipe, recipeResponse);
+        return FavoriteRecipeMapper.toDtoWithRecipe(favorite, recipe, recipeMapper);
     }
 
-    /**
-     * Find favorite by user and recipe IDs or throw exception.
-     */
     private FavoriteRecipe findFavoriteByUserAndRecipeOrThrow(UUID userId, UUID recipeId) {
         return favoriteRecipeRepository.findByUserIdAndRecipeId(userId, recipeId)
                 .orElseThrow(() -> new ResourceNotFoundException(
-                        String.format("Favorite not found for user %s and recipe %s", userId, recipeId)));
+                        "Favorite not found for user " + userId + " and recipe " + recipeId));
     }
 
     /**
@@ -134,76 +110,62 @@ public class FavoriteRecipeService {
      */
     @Transactional
     public void removeFromFavorites(UUID userId, UUID recipeId) {
-        FavoriteRecipe favoriteRecipe = findFavoriteByUserAndRecipeOrThrow(userId, recipeId);
-        favoriteRecipeRepository.delete(favoriteRecipe);
+        FavoriteRecipe favorite = findFavoriteByUserAndRecipeOrThrow(userId, recipeId);
+        favoriteRecipeRepository.delete(favorite);
         log.info("Removed recipe {} from favorites for user {}", recipeId, userId);
     }
 
     /**
-     * Get all favorite recipes for a user with pagination.
+     * Get user's favorite recipes with pagination.
      */
     @Transactional(readOnly = true)
     public Page<FavoriteRecipeDto> getUserFavorites(UUID userId, Pageable pageable) {
-        log.debug("Fetching favorites for user {} with pagination", userId);
-        Page<FavoriteRecipe> favoritesPage = favoriteRecipeRepository.findByUserId(userId, pageable);
+        Page<FavoriteRecipe> favorites = favoriteRecipeRepository.findByUserId(userId, pageable);
 
-        if (favoritesPage.isEmpty()) {
-            log.debug("No favorites found for user {}", userId);
-            return Page.empty(pageable);
-        }
+        List<UUID> recipeIds = extractRecipeIds(favorites.getContent());
 
-        // Create a map of recipe IDs to recipes
-        Map<UUID, Recipe> recipesMap = getRecipesMapFromFavorites(favoritesPage.getContent());
+        Map<UUID, Recipe> recipesMap = recipeIds.isEmpty()
+                ? Collections.emptyMap()
+                : getRecipesMapFromIds(recipeIds);
 
-        // Map favorites to DTOs with recipe details
-        return favoritesPage.map(favorite -> mapFavoriteToDto(favorite, recipesMap));
+        return favorites.map(favorite -> mapFavoriteToDto(favorite, recipesMap));
     }
 
-    /**
-     * Create a map of recipe IDs to recipe entities.
-     */
-    private Map<UUID, Recipe> getRecipesMapFromFavorites(List<FavoriteRecipe> favorites) {
-        if (favorites == null || favorites.isEmpty()) {
-            return Collections.emptyMap();
-        }
-
-        List<UUID> recipeIds = favorites.stream()
+    private List<UUID> extractRecipeIds(List<FavoriteRecipe> favorites) {
+        return favorites.stream()
                 .map(FavoriteRecipe::getRecipeId)
                 .toList();
+    }
 
+    private Map<UUID, Recipe> getRecipesMapFromIds(List<UUID> recipeIds) {
         return recipeRepository.findAllById(recipeIds).stream()
                 .collect(Collectors.toMap(Recipe::getId, Function.identity()));
     }
 
-    /**
-     * Map a favorite to DTO with recipe details from the recipes map.
-     */
     private FavoriteRecipeDto mapFavoriteToDto(FavoriteRecipe favorite, Map<UUID, Recipe> recipesMap) {
-        Recipe recipe = recipesMap.get(favorite.getRecipeId());
-        RecipeResponse recipeResponse = recipe != null ? recipeMapper.toResponse(recipe) : null;
-        return FavoriteRecipeMapper.toDto(favorite, recipeResponse);
+        Recipe recipe = recipesMap.getOrDefault(favorite.getRecipeId(),
+                Recipe.builder().id(favorite.getRecipeId()).title("Unknown Recipe").build());
+
+        return FavoriteRecipeMapper.toDtoWithRecipe(favorite, recipe, recipeMapper);
     }
 
     /**
-     * Get all favorite recipes for a user without pagination.
+     * Get all user's favorite recipes without pagination.
      */
     @Transactional(readOnly = true)
     public List<FavoriteRecipeDto> getAllUserFavorites(UUID userId) {
-        log.debug("Fetching all favorites for user {}", userId);
         List<FavoriteRecipe> favorites = favoriteRecipeRepository.findByUserId(userId);
 
         if (favorites.isEmpty()) {
-            log.debug("No favorites found for user {}", userId);
             return Collections.emptyList();
         }
 
-        // Create a map of recipe IDs to recipes
-        Map<UUID, Recipe> recipesMap = getRecipesMapFromFavorites(favorites);
+        List<UUID> recipeIds = extractRecipeIds(favorites);
+        Map<UUID, Recipe> recipesMap = getRecipesMapFromIds(recipeIds);
 
-        // Map favorites to DTOs with recipe details
         return favorites.stream()
                 .map(favorite -> mapFavoriteToDto(favorite, recipesMap))
-                .collect(Collectors.toList());
+                .toList();
     }
 
     /**
@@ -215,10 +177,10 @@ public class FavoriteRecipeService {
     }
 
     /**
-     * Get the number of users who have favorited a recipe.
+     * Get favorite count for a recipe.
      */
     @Transactional(readOnly = true)
     public long getFavoriteCount(UUID recipeId) {
         return favoriteRecipeRepository.countByRecipeId(recipeId);
     }
-} 
+}

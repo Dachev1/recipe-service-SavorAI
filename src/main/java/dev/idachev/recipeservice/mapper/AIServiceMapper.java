@@ -39,7 +39,7 @@ public class AIServiceMapper {
 
     /**
      * Extracts macro nutrients with null safety.
-     * 
+     *
      * @param recipe the RecipeRequest containing macros data
      * @return a MacrosDto with nutritional information
      */

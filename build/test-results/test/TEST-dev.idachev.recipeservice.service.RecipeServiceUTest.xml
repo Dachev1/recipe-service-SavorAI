@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="dev.idachev.recipeservice.service.RecipeServiceUTest" tests="11" skipped="0" failures="0" errors="0" timestamp="2025-03-23T07:50:24" hostname="DACHEV" time="0.087">
+  <properties/>
+  <testcase name="givenValidOwner_whenDeleteRecipe_thenCallDeleteRepository()" classname="dev.idachev.recipeservice.service.RecipeServiceUTest" time="0.04"/>
+  <testcase name="givenValidOwner_whenUpdateRecipe_thenUpdateRecipe()" classname="dev.idachev.recipeservice.service.RecipeServiceUTest" time="0.005"/>
+  <testcase name="givenImageFile_whenCreateRecipe_thenProcessImage()" classname="dev.idachev.recipeservice.service.RecipeServiceUTest" time="0.005"/>
+  <testcase name="givenIngredients_whenGenerateMeal_thenReturnGeneratedRecipe()" classname="dev.idachev.recipeservice.service.RecipeServiceUTest" time="0.003"/>
+  <testcase name="givenInvalidOwner_whenUpdateRecipe_thenThrowUnauthorizedException()" classname="dev.idachev.recipeservice.service.RecipeServiceUTest" time="0.004"/>
+  <testcase name="givenValidPagination_whenGetAllRecipes_thenReturnPagedRecipes()" classname="dev.idachev.recipeservice.service.RecipeServiceUTest" time="0.004"/>
+  <testcase name="givenInvalidId_whenGetRecipeById_thenThrowRecipeNotFoundException()" classname="dev.idachev.recipeservice.service.RecipeServiceUTest" time="0.003"/>
+  <testcase name="givenValidRequest_whenCreateRecipe_thenReturnRecipeResponse()" classname="dev.idachev.recipeservice.service.RecipeServiceUTest" time="0.005"/>
+  <testcase name="givenInvalidOwner_whenDeleteRecipe_thenThrowUnauthorizedException()" classname="dev.idachev.recipeservice.service.RecipeServiceUTest" time="0.004"/>
+  <testcase name="givenValidId_whenGetRecipeById_thenReturnRecipeResponse()" classname="dev.idachev.recipeservice.service.RecipeServiceUTest" time="0.005"/>
+  <testcase name="givenKeyword_whenSearchRecipes_thenReturnMatchedRecipes()" classname="dev.idachev.recipeservice.service.RecipeServiceUTest" time="0.004"/>
+  <system-out><![CDATA[09:50:24.561 [Test worker] INFO dev.idachev.recipeservice.service.RecipeService -- Recipe with ID 2e4cac94-c3ea-4858-b4fd-0b39a789563b deleted successfully
+09:50:24.565 [Test worker] INFO dev.idachev.recipeservice.service.RecipeService -- Updated recipe with ID: c47535d5-2972-427d-a2ec-5b1871bd128f
+09:50:24.571 [Test worker] INFO dev.idachev.recipeservice.service.RecipeService -- Created recipe with ID: 8f86f767-c8a1-417b-9474-df78427fb700
+09:50:24.575 [Test worker] INFO dev.idachev.recipeservice.service.RecipeService -- Generating meal from 3 ingredients
+09:50:24.580 [Test worker] WARN dev.idachev.recipeservice.service.RecipeService -- Unauthorized access attempt: User 0e0c510f-1142-49aa-a3f0-e4ab377a1894 attempted to access recipe 9e266c85-276b-43d5-b41d-9bb52f47a612
+09:50:24.593 [Test worker] INFO dev.idachev.recipeservice.service.RecipeService -- Created recipe with ID: b24ea752-5ff8-45a1-a40d-032fca1d4d2c
+09:50:24.598 [Test worker] WARN dev.idachev.recipeservice.service.RecipeService -- Unauthorized access attempt: User 2a47847b-cb2f-4c8f-8816-5d8115586830 attempted to access recipe fa44d32b-8add-414e-aec9-88807f1bf01c
+]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

@@ -24,10 +24,10 @@ public class FavoriteRecipe {
     @Column
     private UUID recipeId;
 
-    private LocalDateTime addedAt;
+    private LocalDateTime createdAt;
 
     @PrePersist
     protected void onCreate() {
-        addedAt = LocalDateTime.now();
+        createdAt = LocalDateTime.now();
     }
 }

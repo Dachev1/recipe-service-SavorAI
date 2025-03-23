@@ -19,7 +19,7 @@ public class RecipeImageService {
 
     private final AIService aiService;
     private final ImageService imageService;
-    
+
     @Autowired
     public RecipeImageService(AIService aiService, ImageService imageService) {
         this.aiService = aiService;
