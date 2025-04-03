@@ -11,7 +11,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 @Repository
-public interface FavoriteRecipeRepository extends JpaRepository<FavoriteRecipe, UUID> {
+public interface FavoriteRecipeRepository extends JpaRepository<FavoriteRecipe, Long> {
 
     Page<FavoriteRecipe> findByUserId(UUID userId, Pageable pageable);
 
@@ -22,4 +22,6 @@ public interface FavoriteRecipeRepository extends JpaRepository<FavoriteRecipe, 
     long countByRecipeId(UUID recipeId);
 
     Optional<FavoriteRecipe> findByUserIdAndRecipeId(UUID userId, UUID recipeId);
+
+    void deleteByUserIdAndRecipeId(UUID userId, UUID recipeId);
 } 

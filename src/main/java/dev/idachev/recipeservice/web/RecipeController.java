@@ -108,7 +108,7 @@ public class RecipeController {
 
     @Operation(summary = "Get all recipes", description = "Returns all recipes with pagination")
     @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Recipes retrieved successfully", 
+            @ApiResponse(responseCode = "200", description = "Recipes returned successfully", 
                     content = @Content(schema = @Schema(implementation = Page.class))),
             @ApiResponse(responseCode = "401", description = "Unauthorized")
     })
@@ -116,10 +116,12 @@ public class RecipeController {
     public ResponseEntity<Page<RecipeResponse>> getAllRecipes(
             @Parameter(description = "Pagination parameters") 
             Pageable pageable,
+            @Parameter(description = "Whether to show user's personal recipes in catalog")
+            @RequestParam(required = false, defaultValue = "false") boolean showPersonal,
             @RequestHeader("Authorization") String token) {
         
         UUID userId = userService.getUserIdFromToken(token);
-        return ResponseEntity.ok(recipeService.getAllRecipes(pageable, userId));
+        return ResponseEntity.ok(recipeService.getAllRecipes(pageable, userId, showPersonal));
     }
 
     @Operation(summary = "Get current user's recipes", description = "Returns recipes created by the current user")
@@ -204,10 +206,8 @@ public class RecipeController {
     @PostMapping("/generate")
     public ResponseEntity<SimplifiedRecipeResponse> generateMeal(
             @Parameter(description = "List of ingredients") 
-            @RequestBody @NotEmpty(message = "Ingredients list cannot be empty") List<String> ingredients,
-            @RequestHeader("Authorization") String token) {
+            @RequestBody @NotEmpty(message = "Ingredients list cannot be empty") List<String> ingredients) {
         
-        userService.validateToken(token);
         return ResponseEntity.ok(recipeService.generateMeal(ingredients));
     }
 } 

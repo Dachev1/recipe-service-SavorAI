@@ -1,26 +1,26 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="dev.idachev.recipeservice.service.RecipeImageServiceUTest" tests="9" skipped="0" failures="0" errors="0" timestamp="2025-03-23T07:50:24" hostname="DACHEV" time="0.157">
+<testsuite name="dev.idachev.recipeservice.service.RecipeImageServiceUTest" tests="9" skipped="0" failures="0" errors="0" timestamp="2025-03-24T06:42:41" hostname="DACHEV" time="0.139">
   <properties/>
-  <testcase name="givenNoImageButTitle_whenProcessRecipeImage_thenGenerateImage()" classname="dev.idachev.recipeservice.service.RecipeImageServiceUTest" time="0.066"/>
-  <testcase name="givenImageFile_whenProcessRecipeImage_thenUploadImage()" classname="dev.idachev.recipeservice.service.RecipeImageServiceUTest" time="0.006"/>
-  <testcase name="givenTitle_whenGenerateRecipeImage_thenReturnImageUrl()" classname="dev.idachev.recipeservice.service.RecipeImageServiceUTest" time="0.003"/>
-  <testcase name="givenEmptyGeneratedUrl_whenGenerateRecipeImage_thenReturnNull()" classname="dev.idachev.recipeservice.service.RecipeImageServiceUTest" time="0.003"/>
-  <testcase name="givenGenerationError_whenGenerateRecipeImage_thenReturnNull()" classname="dev.idachev.recipeservice.service.RecipeImageServiceUTest" time="0.014"/>
-  <testcase name="givenUploadError_whenProcessRecipeImage_thenReturnNull()" classname="dev.idachev.recipeservice.service.RecipeImageServiceUTest" time="0.007"/>
-  <testcase name="givenEmptyImageFile_whenProcessRecipeImage_thenGenerateImage()" classname="dev.idachev.recipeservice.service.RecipeImageServiceUTest" time="0.046"/>
-  <testcase name="givenEmptyTitle_whenGenerateRecipeImage_thenReturnNull()" classname="dev.idachev.recipeservice.service.RecipeImageServiceUTest" time="0.004"/>
-  <testcase name="givenNoImageAndNoTitle_whenProcessRecipeImage_thenReturnNull()" classname="dev.idachev.recipeservice.service.RecipeImageServiceUTest" time="0.002"/>
-  <system-out><![CDATA[09:50:24.389 [Test worker] INFO dev.idachev.recipeservice.service.RecipeImageService -- Requesting AI image generation for recipe: Pasta Carbonara
-09:50:24.389 [Test worker] INFO dev.idachev.recipeservice.service.RecipeImageService -- Successfully generated image for recipe: Pasta Carbonara
-09:50:24.397 [Test worker] INFO dev.idachev.recipeservice.service.RecipeImageService -- Image uploaded for recipe 'Pasta Carbonara': http://example.com/images/pasta.jpg
-09:50:24.401 [Test worker] INFO dev.idachev.recipeservice.service.RecipeImageService -- Requesting AI image generation for recipe: Pasta Carbonara
-09:50:24.401 [Test worker] INFO dev.idachev.recipeservice.service.RecipeImageService -- Successfully generated image for recipe: Pasta Carbonara
-09:50:24.405 [Test worker] INFO dev.idachev.recipeservice.service.RecipeImageService -- Requesting AI image generation for recipe: Pasta Carbonara
-09:50:24.405 [Test worker] WARN dev.idachev.recipeservice.service.RecipeImageService -- AI service returned empty image URL for recipe: Pasta Carbonara
-09:50:24.410 [Test worker] INFO dev.idachev.recipeservice.service.RecipeImageService -- Requesting AI image generation for recipe: Pasta Carbonara
-09:50:24.411 [Test worker] ERROR dev.idachev.recipeservice.service.RecipeImageService -- Failed to generate image: Generation failed
+  <testcase name="givenNoImageButTitle_whenProcessRecipeImage_thenGenerateImage()" classname="dev.idachev.recipeservice.service.RecipeImageServiceUTest" time="0.052"/>
+  <testcase name="givenImageFile_whenProcessRecipeImage_thenUploadImage()" classname="dev.idachev.recipeservice.service.RecipeImageServiceUTest" time="0.005"/>
+  <testcase name="givenTitle_whenGenerateRecipeImage_thenReturnImageUrl()" classname="dev.idachev.recipeservice.service.RecipeImageServiceUTest" time="0.004"/>
+  <testcase name="givenEmptyGeneratedUrl_whenGenerateRecipeImage_thenReturnNull()" classname="dev.idachev.recipeservice.service.RecipeImageServiceUTest" time="0.004"/>
+  <testcase name="givenGenerationError_whenGenerateRecipeImage_thenReturnNull()" classname="dev.idachev.recipeservice.service.RecipeImageServiceUTest" time="0.012"/>
+  <testcase name="givenUploadError_whenProcessRecipeImage_thenReturnNull()" classname="dev.idachev.recipeservice.service.RecipeImageServiceUTest" time="0.008"/>
+  <testcase name="givenEmptyImageFile_whenProcessRecipeImage_thenGenerateImage()" classname="dev.idachev.recipeservice.service.RecipeImageServiceUTest" time="0.041"/>
+  <testcase name="givenEmptyTitle_whenGenerateRecipeImage_thenReturnNull()" classname="dev.idachev.recipeservice.service.RecipeImageServiceUTest" time="0.002"/>
+  <testcase name="givenNoImageAndNoTitle_whenProcessRecipeImage_thenReturnNull()" classname="dev.idachev.recipeservice.service.RecipeImageServiceUTest" time="0.003"/>
+  <system-out><![CDATA[08:42:41.894 [Test worker] INFO dev.idachev.recipeservice.service.RecipeImageService -- Requesting AI image generation for recipe: Pasta Carbonara
+08:42:41.894 [Test worker] INFO dev.idachev.recipeservice.service.RecipeImageService -- Successfully generated image for recipe: Pasta Carbonara
+08:42:41.901 [Test worker] INFO dev.idachev.recipeservice.service.RecipeImageService -- Image uploaded for recipe 'Pasta Carbonara': http://example.com/images/pasta.jpg
+08:42:41.905 [Test worker] INFO dev.idachev.recipeservice.service.RecipeImageService -- Requesting AI image generation for recipe: Pasta Carbonara
+08:42:41.905 [Test worker] INFO dev.idachev.recipeservice.service.RecipeImageService -- Successfully generated image for recipe: Pasta Carbonara
+08:42:41.910 [Test worker] INFO dev.idachev.recipeservice.service.RecipeImageService -- Requesting AI image generation for recipe: Pasta Carbonara
+08:42:41.911 [Test worker] WARN dev.idachev.recipeservice.service.RecipeImageService -- AI service returned empty image URL for recipe: Pasta Carbonara
+08:42:41.916 [Test worker] INFO dev.idachev.recipeservice.service.RecipeImageService -- Requesting AI image generation for recipe: Pasta Carbonara
+08:42:41.919 [Test worker] ERROR dev.idachev.recipeservice.service.RecipeImageService -- Failed to generate image: Generation failed
 java.lang.RuntimeException: Generation failed
-	at dev.idachev.recipeservice.infrastructure.ai.AIService.generateRecipeImage(AIService.java:117)
+	at dev.idachev.recipeservice.infrastructure.ai.AIService.generateRecipeImage(AIService.java:167)
 	at dev.idachev.recipeservice.service.RecipeImageService.generateRecipeImage(RecipeImageService.java:98)
 	at dev.idachev.recipeservice.service.RecipeImageServiceUTest.givenGenerationError_whenGenerateRecipeImage_thenReturnNull(RecipeImageServiceUTest.java:199)
 	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
@@ -75,14 +75,15 @@ java.lang.RuntimeException: Generation failed
 	at org.junit.platform.engine.support.hierarchical.SameThreadHierarchicalTestExecutorService.submit(SameThreadHierarchicalTestExecutorService.java:35)
 	at org.junit.platform.engine.support.hierarchical.HierarchicalTestExecutor.execute(HierarchicalTestExecutor.java:57)
 	at org.junit.platform.engine.support.hierarchical.HierarchicalTestEngine.execute(HierarchicalTestEngine.java:54)
-	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.execute(EngineExecutionOrchestrator.java:107)
-	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.execute(EngineExecutionOrchestrator.java:88)
-	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.lambda$execute$0(EngineExecutionOrchestrator.java:54)
-	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.withInterceptedStreams(EngineExecutionOrchestrator.java:67)
-	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.execute(EngineExecutionOrchestrator.java:52)
-	at org.junit.platform.launcher.core.DefaultLauncher.execute(DefaultLauncher.java:114)
-	at org.junit.platform.launcher.core.DefaultLauncher.execute(DefaultLauncher.java:86)
-	at org.junit.platform.launcher.core.DefaultLauncherSession$DelegatingLauncher.execute(DefaultLauncherSession.java:86)
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.execute(EngineExecutionOrchestrator.java:198)
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.execute(EngineExecutionOrchestrator.java:169)
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.execute(EngineExecutionOrchestrator.java:93)
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.lambda$execute$0(EngineExecutionOrchestrator.java:58)
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.withInterceptedStreams(EngineExecutionOrchestrator.java:141)
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.execute(EngineExecutionOrchestrator.java:57)
+	at org.junit.platform.launcher.core.DefaultLauncher.execute(DefaultLauncher.java:103)
+	at org.junit.platform.launcher.core.DefaultLauncher.execute(DefaultLauncher.java:85)
+	at org.junit.platform.launcher.core.DelegatingLauncher.execute(DelegatingLauncher.java:47)
 	at org.gradle.api.internal.tasks.testing.junitplatform.JUnitPlatformTestClassProcessor$CollectAllTestClassesExecutor.processAllTestClasses(JUnitPlatformTestClassProcessor.java:124)
 	at org.gradle.api.internal.tasks.testing.junitplatform.JUnitPlatformTestClassProcessor$CollectAllTestClassesExecutor.access$000(JUnitPlatformTestClassProcessor.java:99)
 	at org.gradle.api.internal.tasks.testing.junitplatform.JUnitPlatformTestClassProcessor.stop(JUnitPlatformTestClassProcessor.java:94)
@@ -103,7 +104,7 @@ java.lang.RuntimeException: Generation failed
 	at org.gradle.process.internal.worker.child.SystemApplicationClassLoaderWorker.call(SystemApplicationClassLoaderWorker.java:71)
 	at worker.org.gradle.process.internal.worker.GradleWorkerMain.run(GradleWorkerMain.java:69)
 	at worker.org.gradle.process.internal.worker.GradleWorkerMain.main(GradleWorkerMain.java:74)
-09:50:24.423 [Test worker] ERROR dev.idachev.recipeservice.service.RecipeImageService -- Failed to upload image: Upload failed
+08:42:41.929 [Test worker] ERROR dev.idachev.recipeservice.service.RecipeImageService -- Failed to upload image: Upload failed
 dev.idachev.recipeservice.exception.ImageProcessingException: Upload failed
 	at dev.idachev.recipeservice.infrastructure.storage.ImageService.uploadImage(ImageService.java:21)
 	at dev.idachev.recipeservice.service.RecipeImageService.uploadRecipeImage(RecipeImageService.java:75)
@@ -161,14 +162,15 @@ dev.idachev.recipeservice.exception.ImageProcessingException: Upload failed
 	at org.junit.platform.engine.support.hierarchical.SameThreadHierarchicalTestExecutorService.submit(SameThreadHierarchicalTestExecutorService.java:35)
 	at org.junit.platform.engine.support.hierarchical.HierarchicalTestExecutor.execute(HierarchicalTestExecutor.java:57)
 	at org.junit.platform.engine.support.hierarchical.HierarchicalTestEngine.execute(HierarchicalTestEngine.java:54)
-	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.execute(EngineExecutionOrchestrator.java:107)
-	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.execute(EngineExecutionOrchestrator.java:88)
-	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.lambda$execute$0(EngineExecutionOrchestrator.java:54)
-	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.withInterceptedStreams(EngineExecutionOrchestrator.java:67)
-	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.execute(EngineExecutionOrchestrator.java:52)
-	at org.junit.platform.launcher.core.DefaultLauncher.execute(DefaultLauncher.java:114)
-	at org.junit.platform.launcher.core.DefaultLauncher.execute(DefaultLauncher.java:86)
-	at org.junit.platform.launcher.core.DefaultLauncherSession$DelegatingLauncher.execute(DefaultLauncherSession.java:86)
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.execute(EngineExecutionOrchestrator.java:198)
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.execute(EngineExecutionOrchestrator.java:169)
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.execute(EngineExecutionOrchestrator.java:93)
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.lambda$execute$0(EngineExecutionOrchestrator.java:58)
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.withInterceptedStreams(EngineExecutionOrchestrator.java:141)
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.execute(EngineExecutionOrchestrator.java:57)
+	at org.junit.platform.launcher.core.DefaultLauncher.execute(DefaultLauncher.java:103)
+	at org.junit.platform.launcher.core.DefaultLauncher.execute(DefaultLauncher.java:85)
+	at org.junit.platform.launcher.core.DelegatingLauncher.execute(DelegatingLauncher.java:47)
 	at org.gradle.api.internal.tasks.testing.junitplatform.JUnitPlatformTestClassProcessor$CollectAllTestClassesExecutor.processAllTestClasses(JUnitPlatformTestClassProcessor.java:124)
 	at org.gradle.api.internal.tasks.testing.junitplatform.JUnitPlatformTestClassProcessor$CollectAllTestClassesExecutor.access$000(JUnitPlatformTestClassProcessor.java:99)
 	at org.gradle.api.internal.tasks.testing.junitplatform.JUnitPlatformTestClassProcessor.stop(JUnitPlatformTestClassProcessor.java:94)
@@ -189,10 +191,10 @@ dev.idachev.recipeservice.exception.ImageProcessingException: Upload failed
 	at org.gradle.process.internal.worker.child.SystemApplicationClassLoaderWorker.call(SystemApplicationClassLoaderWorker.java:71)
 	at worker.org.gradle.process.internal.worker.GradleWorkerMain.run(GradleWorkerMain.java:69)
 	at worker.org.gradle.process.internal.worker.GradleWorkerMain.main(GradleWorkerMain.java:74)
-09:50:24.425 [Test worker] ERROR dev.idachev.recipeservice.service.RecipeImageService -- Failed to process recipe image: Failed to upload image: Upload failed
-09:50:24.474 [Test worker] INFO dev.idachev.recipeservice.service.RecipeImageService -- Requesting AI image generation for recipe: Pasta Carbonara
-09:50:24.474 [Test worker] INFO dev.idachev.recipeservice.service.RecipeImageService -- Successfully generated image for recipe: Pasta Carbonara
-09:50:24.477 [Test worker] WARN dev.idachev.recipeservice.service.RecipeImageService -- Cannot generate image: Recipe title is empty
+08:42:41.932 [Test worker] ERROR dev.idachev.recipeservice.service.RecipeImageService -- Failed to process recipe image: Failed to upload image: Upload failed
+08:42:41.975 [Test worker] INFO dev.idachev.recipeservice.service.RecipeImageService -- Requesting AI image generation for recipe: Pasta Carbonara
+08:42:41.975 [Test worker] INFO dev.idachev.recipeservice.service.RecipeImageService -- Successfully generated image for recipe: Pasta Carbonara
+08:42:41.978 [Test worker] WARN dev.idachev.recipeservice.service.RecipeImageService -- Cannot generate image: Recipe title is empty
 ]]></system-out>
   <system-err><![CDATA[]]></system-err>
 </testsuite>

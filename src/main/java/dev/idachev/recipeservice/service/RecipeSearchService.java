@@ -29,14 +29,17 @@ public class RecipeSearchService {
     private final RecipeRepository recipeRepository;
     private final FavoriteRecipeRepository favoriteRecipeRepository;
     private final RecipeMapper recipeMapper;
+    private final CommentService commentService;
 
     @Autowired
     public RecipeSearchService(RecipeRepository recipeRepository,
                                FavoriteRecipeRepository favoriteRecipeRepository,
-                               RecipeMapper recipeMapper) {
+                               RecipeMapper recipeMapper,
+                               CommentService commentService) {
         this.recipeRepository = recipeRepository;
         this.favoriteRecipeRepository = favoriteRecipeRepository;
         this.recipeMapper = recipeMapper;
+        this.commentService = commentService;
     }
 
     /**
@@ -149,6 +152,50 @@ public class RecipeSearchService {
             log.warn("Error retrieving favorite info: {}", e.getMessage());
             response.setFavoriteCount(0L);
             response.setIsFavorite(false);
+        }
+
+        return response;
+    }
+
+    /**
+     * Get all recipes excluding those created by a specific user.
+     */
+    @Transactional(readOnly = true)
+    public Page<RecipeResponse> getAllRecipesExcludingUser(Pageable pageable, UUID userId) {
+        Page<Recipe> recipePage = recipeRepository.findByUserIdNot(userId, pageable);
+        List<RecipeResponse> recipeResponses = recipePage.getContent().stream()
+                .map(recipeMapper::toResponse)
+                .map(recipe -> enhanceWithUserInteractionData(recipe, userId))
+                .collect(Collectors.toList());
+
+        return new PageImpl<>(recipeResponses, pageable, recipePage.getTotalElements());
+    }
+
+    /**
+     * Enhance a recipe response with user interaction data.
+     */
+    private RecipeResponse enhanceWithUserInteractionData(RecipeResponse response, UUID userId) {
+        if (response == null) {
+            return null;
+        }
+
+        try {
+            // Set favorite information
+            long favoriteCount = favoriteRecipeRepository.countByRecipeId(response.getId());
+            response.setFavoriteCount(favoriteCount);
+
+            boolean isFavorite = userId != null && 
+                favoriteRecipeRepository.existsByUserIdAndRecipeId(userId, response.getId());
+            response.setIsFavorite(isFavorite);
+            
+            // Set comment count
+            long commentCount = commentService.getCommentCount(response.getId());
+            response.setCommentCount(commentCount);
+        } catch (Exception e) {
+            log.warn("Error enhancing recipe {} with interaction data: {}", response.getId(), e.getMessage());
+            response.setFavoriteCount(0L);
+            response.setIsFavorite(false);
+            response.setCommentCount(0L);
         }
 
         return response;

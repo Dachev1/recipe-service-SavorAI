@@ -36,6 +36,7 @@ public class RecipeService {
     private final RecipeSearchService recipeSearchService;
     private final AIService aiService;
     private final RecipeMapper recipeMapper;
+    private final CommentService commentService;
 
     @Autowired
     public RecipeService(RecipeRepository recipeRepository,
@@ -43,13 +44,15 @@ public class RecipeService {
                          RecipeImageService recipeImageService,
                          RecipeSearchService recipeSearchService,
                          AIService aiService,
-                         RecipeMapper recipeMapper) {
+                         RecipeMapper recipeMapper,
+                         CommentService commentService) {
         this.recipeRepository = recipeRepository;
         this.favoriteRecipeRepository = favoriteRecipeRepository;
         this.recipeImageService = recipeImageService;
         this.recipeSearchService = recipeSearchService;
         this.aiService = aiService;
         this.recipeMapper = recipeMapper;
+        this.commentService = commentService;
     }
 
     /**
@@ -115,8 +118,14 @@ public class RecipeService {
      * Get all recipes with pagination and favorite information.
      */
     @Transactional(readOnly = true)
-    public Page<RecipeResponse> getAllRecipes(Pageable pageable, UUID userId) {
-        return recipeSearchService.getAllRecipes(pageable, userId);
+    public Page<RecipeResponse> getAllRecipes(Pageable pageable, UUID userId, boolean showPersonal) {
+        if (showPersonal) {
+            // If showPersonal is true, return all recipes
+            return recipeSearchService.getAllRecipes(pageable, userId);
+        } else {
+            // If showPersonal is false, exclude recipes created by the current user
+            return recipeSearchService.getAllRecipesExcludingUser(pageable, userId);
+        }
     }
 
     /**
@@ -194,20 +203,17 @@ public class RecipeService {
             return null;
         }
 
-        try {
-            response.setFavoriteCount(favoriteRecipeRepository.countByRecipeId(response.getId()));
+        // Check if this recipe is in the user's favorites
+        boolean isFavorite = favoriteRecipeRepository.existsByUserIdAndRecipeId(userId, response.getId());
+        response.setIsFavorite(isFavorite);
 
-            if (userId != null) {
-                boolean isFavorite = favoriteRecipeRepository.existsByUserIdAndRecipeId(userId, response.getId());
-                response.setIsFavorite(isFavorite);
-            } else {
-                response.setIsFavorite(false);
-            }
-        } catch (Exception e) {
-            log.warn("Error enhancing recipe {} with favorite info: {}", response.getId(), e.getMessage());
-            response.setFavoriteCount(0L);
-            response.setIsFavorite(false);
-        }
+        // Get the favorite count for this recipe
+        long favoriteCount = favoriteRecipeRepository.countByRecipeId(response.getId());
+        response.setFavoriteCount(favoriteCount);
+        
+        // Get the comment count for this recipe
+        long commentCount = commentService.getCommentCount(response.getId());
+        response.setCommentCount(commentCount);
 
         return response;
     }

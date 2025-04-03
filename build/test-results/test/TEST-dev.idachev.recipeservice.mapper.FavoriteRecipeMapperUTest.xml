@@ -1,18 +1,18 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="dev.idachev.recipeservice.mapper.FavoriteRecipeMapperUTest" tests="9" skipped="0" failures="0" errors="0" timestamp="2025-03-23T07:50:21" hostname="DACHEV" time="1.574">
+<testsuite name="dev.idachev.recipeservice.mapper.FavoriteRecipeMapperUTest" tests="9" skipped="0" failures="0" errors="0" timestamp="2025-03-24T06:42:40" hostname="DACHEV" time="1.033">
   <properties/>
-  <testcase name="givenNullUserId_whenCreate_thenThrowNullPointerException()" classname="dev.idachev.recipeservice.mapper.FavoriteRecipeMapperUTest" time="1.494"/>
+  <testcase name="givenNullUserId_whenCreate_thenThrowNullPointerException()" classname="dev.idachev.recipeservice.mapper.FavoriteRecipeMapperUTest" time="0.945"/>
   <testcase name="givenNullRecipeMapper_whenToDtoWithRecipe_thenThrowNullPointerException()" classname="dev.idachev.recipeservice.mapper.FavoriteRecipeMapperUTest" time="0.006"/>
   <testcase name="givenNullRecipe_whenToDtoWithRecipe_thenThrowNullPointerException()" classname="dev.idachev.recipeservice.mapper.FavoriteRecipeMapperUTest" time="0.003"/>
   <testcase name="givenNullRecipeId_whenCreate_thenThrowNullPointerException()" classname="dev.idachev.recipeservice.mapper.FavoriteRecipeMapperUTest" time="0.003"/>
-  <testcase name="givenFavoriteRecipeAndRecipe_whenToDtoWithRecipe_thenReturnMappedDto()" classname="dev.idachev.recipeservice.mapper.FavoriteRecipeMapperUTest" time="0.052"/>
-  <testcase name="givenUserIdAndRecipeId_whenCreate_thenReturnFavoriteRecipeEntity()" classname="dev.idachev.recipeservice.mapper.FavoriteRecipeMapperUTest" time="0.002"/>
+  <testcase name="givenFavoriteRecipeAndRecipe_whenToDtoWithRecipe_thenReturnMappedDto()" classname="dev.idachev.recipeservice.mapper.FavoriteRecipeMapperUTest" time="0.053"/>
+  <testcase name="givenUserIdAndRecipeId_whenCreate_thenReturnFavoriteRecipeEntity()" classname="dev.idachev.recipeservice.mapper.FavoriteRecipeMapperUTest" time="0.003"/>
   <testcase name="givenNullRecipe_whenCreate_thenThrowNullPointerException()" classname="dev.idachev.recipeservice.mapper.FavoriteRecipeMapperUTest" time="0.003"/>
   <testcase name="givenUserIdAndRecipe_whenCreate_thenReturnFavoriteRecipeEntity()" classname="dev.idachev.recipeservice.mapper.FavoriteRecipeMapperUTest" time="0.003"/>
   <testcase name="givenNullFavoriteRecipe_whenToDtoWithRecipe_thenThrowNullPointerException()" classname="dev.idachev.recipeservice.mapper.FavoriteRecipeMapperUTest" time="0.003"/>
   <system-out><![CDATA[]]></system-out>
   <system-err><![CDATA[Mockito is currently self-attaching to enable the inline-mock-maker. This will no longer work in future releases of the JDK. Please add Mockito as an agent to your build what is described in Mockito's documentation: https://javadoc.io/doc/org.mockito/mockito-core/latest/org/mockito/Mockito.html#0.3
-WARNING: A Java agent has been loaded dynamically (C:\Users\pffe3\.gradle\caches\modules-2\files-2.1\net.bytebuddy\byte-buddy-agent\1.15.10\e8eb255b2c378b9a6c7341e7b0e12f0a5636377\byte-buddy-agent-1.15.10.jar)
+WARNING: A Java agent has been loaded dynamically (C:\Users\pffe3\.gradle\caches\modules-2\files-2.1\net.bytebuddy\byte-buddy-agent\1.15.11\a38b16385e867f59a641330f0362ebe742788ed8\byte-buddy-agent-1.15.11.jar)
 WARNING: If a serviceability tool is in use, please run with -XX:+EnableDynamicAgentLoading to hide this warning
 WARNING: If a serviceability tool is not in use, please run with -Djdk.instrument.traceUsage for more information
 WARNING: Dynamic loading of agents will be disallowed by default in a future release

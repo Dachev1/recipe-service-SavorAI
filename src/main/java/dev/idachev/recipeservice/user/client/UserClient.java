@@ -32,4 +32,10 @@ public interface UserClient {
      */
     @GetMapping("/api/v1/user/current-user")
     ResponseEntity<UserDTO> getCurrentUser(@RequestHeader("Authorization") String token);
+
+    /**
+     * Get user by ID
+     */
+    @GetMapping("/api/v1/users/{id}")
+    ResponseEntity<UserDTO> getUserById(@PathVariable("id") UUID userId);
 } 

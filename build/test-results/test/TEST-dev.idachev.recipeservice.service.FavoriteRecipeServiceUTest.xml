@@ -1,23 +1,23 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="dev.idachev.recipeservice.service.FavoriteRecipeServiceUTest" tests="12" skipped="0" failures="0" errors="0" timestamp="2025-03-23T07:50:23" hostname="DACHEV" time="0.365">
+<testsuite name="dev.idachev.recipeservice.service.FavoriteRecipeServiceUTest" tests="12" skipped="0" failures="0" errors="0" timestamp="2025-03-24T06:42:41" hostname="DACHEV" time="0.337">
   <properties/>
-  <testcase name="givenValidUserIdWithFavorites_whenGetAllUserFavorites_thenReturnAllFavorites()" classname="dev.idachev.recipeservice.service.FavoriteRecipeServiceUTest" time="0.279"/>
-  <testcase name="givenAiGeneratedRecipeWithoutImage_whenAddToFavorites_thenGenerateImage()" classname="dev.idachev.recipeservice.service.FavoriteRecipeServiceUTest" time="0.021"/>
+  <testcase name="givenValidUserIdWithFavorites_whenGetAllUserFavorites_thenReturnAllFavorites()" classname="dev.idachev.recipeservice.service.FavoriteRecipeServiceUTest" time="0.257"/>
+  <testcase name="givenAiGeneratedRecipeWithoutImage_whenAddToFavorites_thenGenerateImage()" classname="dev.idachev.recipeservice.service.FavoriteRecipeServiceUTest" time="0.026"/>
   <testcase name="givenInvalidRecipeId_whenAddToFavorites_thenThrowResourceNotFoundException()" classname="dev.idachev.recipeservice.service.FavoriteRecipeServiceUTest" time="0.005"/>
-  <testcase name="givenValidRecipeId_whenGetFavoriteCount_thenReturnCount()" classname="dev.idachev.recipeservice.service.FavoriteRecipeServiceUTest" time="0.004"/>
-  <testcase name="givenValidIds_whenIsRecipeInFavorites_thenReturnTrue()" classname="dev.idachev.recipeservice.service.FavoriteRecipeServiceUTest" time="0.003"/>
-  <testcase name="givenInvalidFavoriteIds_whenRemoveFromFavorites_thenThrowResourceNotFoundException()" classname="dev.idachev.recipeservice.service.FavoriteRecipeServiceUTest" time="0.006"/>
-  <testcase name="givenNewFavorite_whenAddToFavorites_thenCreateAndReturnFavorite()" classname="dev.idachev.recipeservice.service.FavoriteRecipeServiceUTest" time="0.005"/>
-  <testcase name="givenValidIds_whenRemoveFromFavorites_thenDeleteFavorite()" classname="dev.idachev.recipeservice.service.FavoriteRecipeServiceUTest" time="0.005"/>
-  <testcase name="givenValidUserIdWithFavorites_whenGetUserFavorites_thenReturnPagedFavorites()" classname="dev.idachev.recipeservice.service.FavoriteRecipeServiceUTest" time="0.017"/>
-  <testcase name="givenValidUserIdWithoutFavorites_whenGetUserFavorites_thenReturnEmptyPage()" classname="dev.idachev.recipeservice.service.FavoriteRecipeServiceUTest" time="0.005"/>
-  <testcase name="givenExistingFavorite_whenAddToFavorites_thenReturnExistingFavorite()" classname="dev.idachev.recipeservice.service.FavoriteRecipeServiceUTest" time="0.005"/>
+  <testcase name="givenValidRecipeId_whenGetFavoriteCount_thenReturnCount()" classname="dev.idachev.recipeservice.service.FavoriteRecipeServiceUTest" time="0.003"/>
+  <testcase name="givenValidIds_whenIsRecipeInFavorites_thenReturnTrue()" classname="dev.idachev.recipeservice.service.FavoriteRecipeServiceUTest" time="0.004"/>
+  <testcase name="givenInvalidFavoriteIds_whenRemoveFromFavorites_thenThrowResourceNotFoundException()" classname="dev.idachev.recipeservice.service.FavoriteRecipeServiceUTest" time="0.007"/>
+  <testcase name="givenNewFavorite_whenAddToFavorites_thenCreateAndReturnFavorite()" classname="dev.idachev.recipeservice.service.FavoriteRecipeServiceUTest" time="0.004"/>
+  <testcase name="givenValidIds_whenRemoveFromFavorites_thenDeleteFavorite()" classname="dev.idachev.recipeservice.service.FavoriteRecipeServiceUTest" time="0.004"/>
+  <testcase name="givenValidUserIdWithFavorites_whenGetUserFavorites_thenReturnPagedFavorites()" classname="dev.idachev.recipeservice.service.FavoriteRecipeServiceUTest" time="0.009"/>
+  <testcase name="givenValidUserIdWithoutFavorites_whenGetUserFavorites_thenReturnEmptyPage()" classname="dev.idachev.recipeservice.service.FavoriteRecipeServiceUTest" time="0.004"/>
+  <testcase name="givenExistingFavorite_whenAddToFavorites_thenReturnExistingFavorite()" classname="dev.idachev.recipeservice.service.FavoriteRecipeServiceUTest" time="0.004"/>
   <testcase name="givenValidUserIdWithoutFavorites_whenGetAllUserFavorites_thenReturnEmptyList()" classname="dev.idachev.recipeservice.service.FavoriteRecipeServiceUTest" time="0.004"/>
-  <system-out><![CDATA[09:50:24.250 [Test worker] INFO dev.idachev.recipeservice.service.FavoriteRecipeService -- Generated image for recipe bc906722-029c-4ccb-a876-ccef2b87f4a6
-09:50:24.256 [Test worker] INFO dev.idachev.recipeservice.service.FavoriteRecipeService -- Added recipe bc906722-029c-4ccb-a876-ccef2b87f4a6 to favorites for user 42a94bfc-a42f-4ea9-91b2-af2f1e24719d
-09:50:24.283 [Test worker] INFO dev.idachev.recipeservice.service.FavoriteRecipeService -- Added recipe 892eaac1-38c7-4b81-8603-c948311cd020 to favorites for user 2379387e-ad8a-4032-99db-88dc4147b07f
-09:50:24.289 [Test worker] INFO dev.idachev.recipeservice.service.FavoriteRecipeService -- Removed recipe ccf0cf36-b8c1-43b0-9a89-c4558dd071f7 from favorites for user 16ffbe88-8c5b-4cc0-9c66-d6904e4b75f8
-09:50:24.317 [Test worker] INFO dev.idachev.recipeservice.service.FavoriteRecipeService -- Recipe d1b9cd77-ca7f-4efd-93e1-7de7b7da9fa4 already in favorites for user 6e334a84-75dd-4d08-97c7-3caf56486102
+  <system-out><![CDATA[08:42:41.773 [Test worker] INFO dev.idachev.recipeservice.service.FavoriteRecipeService -- Generated image for recipe 7347ef01-4e41-45e0-9f23-caa7b0605e17
+08:42:41.786 [Test worker] INFO dev.idachev.recipeservice.service.FavoriteRecipeService -- Added recipe 7347ef01-4e41-45e0-9f23-caa7b0605e17 to favorites for user 959d9a9f-f901-4dc2-9069-710e20d462a0
+08:42:41.813 [Test worker] INFO dev.idachev.recipeservice.service.FavoriteRecipeService -- Added recipe fa9c8484-6cd1-425f-874d-dceb3db104b0 to favorites for user 0b456faf-1610-4a5d-89a4-cda9c623c979
+08:42:41.818 [Test worker] INFO dev.idachev.recipeservice.service.FavoriteRecipeService -- Removed recipe 4a145fdc-6764-4c47-b947-e3f2146f64bf from favorites for user dc2152cd-9e47-42a7-a69a-3c15c719051d
+08:42:41.837 [Test worker] INFO dev.idachev.recipeservice.service.FavoriteRecipeService -- Recipe d5e3f7c6-a774-4b03-a217-b4b45e40b3f7 already in favorites for user 1c0aef62-d1cf-4a33-ae62-6ee9b9bdd399
 ]]></system-out>
   <system-err><![CDATA[]]></system-err>
 </testsuite>

@@ -41,7 +41,7 @@
 </td>
 <td>
 <div class="infoBox" id="duration">
-<div class="counter">0.406s</div>
+<div class="counter">0.315s</div>
 <p>duration</p>
 </div>
 </td>
@@ -87,67 +87,67 @@
 <tr>
 <td class="success">Given recipe not in favorites, when removing from favorites, then return 404 not found</td>
 <td class="success">givenRecipeNotInFavorites_whenRemoveFromFavorites_thenReturn404NotFound()</td>
-<td class="success">0.027s</td>
+<td class="success">0.018s</td>
 <td class="success">passed</td>
 </tr>
 <tr>
 <td class="success">Given valid recipe ID and token, when adding to favorites, then return favorite recipe details</td>
 <td class="success">givenValidIdAndToken_whenAddToFavorites_thenReturnFavoriteRecipe()</td>
-<td class="success">0.017s</td>
+<td class="success">0.012s</td>
 <td class="success">passed</td>
 </tr>
 <tr>
 <td class="success">Given valid recipe ID and token, when checking if recipe is in favorites, then return boolean result</td>
 <td class="success">givenValidIdAndToken_whenCheckIsRecipeInFavorites_thenReturnBooleanResult()</td>
-<td class="success">0.009s</td>
+<td class="success">0.010s</td>
 <td class="success">passed</td>
 </tr>
 <tr>
 <td class="success">Given valid recipe ID and token, when removing from favorites, then return no content status</td>
 <td class="success">givenValidIdAndToken_whenRemoveFromFavorites_thenReturnNoContent()</td>
-<td class="success">0.010s</td>
+<td class="success">0.008s</td>
 <td class="success">passed</td>
 </tr>
 <tr>
 <td class="success">Given valid recipe ID not in favorites, when checking if in favorites, then return false</td>
 <td class="success">givenValidIdNotInFavorites_whenCheckIsRecipeInFavorites_thenReturnFalse()</td>
-<td class="success">0.013s</td>
+<td class="success">0.011s</td>
 <td class="success">passed</td>
 </tr>
 <tr>
 <td class="success">Given valid recipe ID with zero favorites, when getting favorite count, then return zero</td>
 <td class="success">givenValidIdWithZeroFavorites_whenGetFavoriteCount_thenReturnZero()</td>
-<td class="success">0.008s</td>
+<td class="success">0.016s</td>
 <td class="success">passed</td>
 </tr>
 <tr>
 <td class="success">Given valid recipe ID, when getting favorite count, then return count value</td>
 <td class="success">givenValidId_whenGetFavoriteCount_thenReturnCount()</td>
-<td class="success">0.007s</td>
+<td class="success">0.010s</td>
 <td class="success">passed</td>
 </tr>
 <tr>
 <td class="success">Given valid token but no favorites, when getting all user favorites, then return empty list</td>
 <td class="success">givenValidTokenButNoFavorites_whenGetAllUserFavorites_thenReturnEmptyList()</td>
-<td class="success">0.011s</td>
+<td class="success">0.022s</td>
 <td class="success">passed</td>
 </tr>
 <tr>
 <td class="success">Given valid token but no favorites, when getting user favorites, then return empty page</td>
 <td class="success">givenValidTokenButNoFavorites_whenGetUserFavorites_thenReturnEmptyPage()</td>
-<td class="success">0.035s</td>
+<td class="success">0.030s</td>
 <td class="success">passed</td>
 </tr>
 <tr>
 <td class="success">Given valid token, when getting all user favorites, then return list of favorites</td>
 <td class="success">givenValidToken_whenGetAllUserFavorites_thenReturnFavoritesList()</td>
-<td class="success">0.250s</td>
+<td class="success">0.158s</td>
 <td class="success">passed</td>
 </tr>
 <tr>
 <td class="success">Given valid token, when getting user favorites with pagination, then return paginated favorites</td>
 <td class="success">givenValidToken_whenGetUserFavorites_thenReturnPaginatedFavorites()</td>
-<td class="success">0.009s</td>
+<td class="success">0.010s</td>
 <td class="success">passed</td>
 </tr>
 </table>
@@ -155,8 +155,8 @@
 <div id="tab1" class="tab">
 <h2>Standard output</h2>
 <span class="code">
-<pre>09:50:24.912 [Test worker] INFO org.springframework.test.context.support.AnnotationConfigContextLoaderUtils -- Could not detect default configuration classes for test class [dev.idachev.recipeservice.web.FavoriteRecipeControllerApiTest]: FavoriteRecipeControllerApiTest does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
-09:50:25.191 [Test worker] INFO org.springframework.boot.test.context.SpringBootTestContextBootstrapper -- Found @SpringBootConfiguration dev.idachev.recipeservice.Application for test class dev.idachev.recipeservice.web.FavoriteRecipeControllerApiTest
+<pre>08:42:42.334 [Test worker] INFO org.springframework.test.context.support.AnnotationConfigContextLoaderUtils -- Could not detect default configuration classes for test class [dev.idachev.recipeservice.web.FavoriteRecipeControllerApiTest]: FavoriteRecipeControllerApiTest does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
+08:42:42.547 [Test worker] INFO org.springframework.boot.test.context.SpringBootTestContextBootstrapper -- Found @SpringBootConfiguration dev.idachev.recipeservice.Application for test class dev.idachev.recipeservice.web.FavoriteRecipeControllerApiTest
 
   .   ____          _            __ _ _
  /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
@@ -165,9 +165,9 @@
   '  |____| .__|_| |_|_| |_\__, | / / / /
  =========|_|==============|___/=/_/_/_/
 
- :: Spring Boot ::                (v3.4.0)
+ :: Spring Boot ::                (v3.4.2)
 
-2025-03-23T09:50:26.030+02:00  WARN 24264 --- [recipe-service] [    Test worker] ory$DuplicateJsonObjectContextCustomizer : 
+2025-03-24T08:42:43.120+02:00  WARN 28808 --- [recipe-service] [    Test worker] ory$DuplicateJsonObjectContextCustomizer : 
 
 Found multiple occurrences of org.json.JSONObject on the class path:
 
@@ -176,18 +176,18 @@ Found multiple occurrences of org.json.JSONObject on the class path:
 
 You may wish to exclude one of them to ensure predictable runtime behavior
 
-2025-03-23T09:50:26.057+02:00  INFO 24264 --- [recipe-service] [    Test worker] d.i.r.w.FavoriteRecipeControllerApiTest  : Starting FavoriteRecipeControllerApiTest using Java 21.0.6 with PID 24264 (started by pffe3 in C:\Users\pffe3\Desktop\savorAI\recipe-service)
-2025-03-23T09:50:26.059+02:00  INFO 24264 --- [recipe-service] [    Test worker] d.i.r.w.FavoriteRecipeControllerApiTest  : No active profile set, falling back to 1 default profile: &quot;default&quot;
-2025-03-23T09:50:28.973+02:00  INFO 24264 --- [recipe-service] [    Test worker] o.s.b.t.m.w.SpringBootMockServletContext : Initializing Spring TestDispatcherServlet ''
-2025-03-23T09:50:28.974+02:00  INFO 24264 --- [recipe-service] [    Test worker] o.s.t.web.servlet.TestDispatcherServlet  : Initializing Servlet ''
-2025-03-23T09:50:28.975+02:00  INFO 24264 --- [recipe-service] [    Test worker] o.s.t.web.servlet.TestDispatcherServlet  : Completed initialization in 1 ms
-2025-03-23T09:50:29.111+02:00  INFO 24264 --- [recipe-service] [    Test worker] d.i.r.w.FavoriteRecipeControllerApiTest  : Started FavoriteRecipeControllerApiTest in 3.776 seconds (process running for 8.974)
-2025-03-23T09:50:29.389+02:00  WARN 24264 --- [recipe-service] [    Test worker] ration$PageModule$WarningLoggingModifier : Serializing PageImpl instances as-is is not supported, meaning that there is no guarantee about the stability of the resulting JSON structure!
+2025-03-24T08:42:43.138+02:00  INFO 28808 --- [recipe-service] [    Test worker] d.i.r.w.FavoriteRecipeControllerApiTest  : Starting FavoriteRecipeControllerApiTest using Java 21.0.6 with PID 28808 (started by pffe3 in C:\Users\pffe3\Desktop\recipe-service-SavorAI)
+2025-03-24T08:42:43.138+02:00  INFO 28808 --- [recipe-service] [    Test worker] d.i.r.w.FavoriteRecipeControllerApiTest  : No active profile set, falling back to 1 default profile: &quot;default&quot;
+2025-03-24T08:42:45.059+02:00  INFO 28808 --- [recipe-service] [    Test worker] o.s.b.t.m.w.SpringBootMockServletContext : Initializing Spring TestDispatcherServlet ''
+2025-03-24T08:42:45.059+02:00  INFO 28808 --- [recipe-service] [    Test worker] o.s.t.web.servlet.TestDispatcherServlet  : Initializing Servlet ''
+2025-03-24T08:42:45.061+02:00  INFO 28808 --- [recipe-service] [    Test worker] o.s.t.web.servlet.TestDispatcherServlet  : Completed initialization in 2 ms
+2025-03-24T08:42:45.162+02:00  INFO 28808 --- [recipe-service] [    Test worker] d.i.r.w.FavoriteRecipeControllerApiTest  : Started FavoriteRecipeControllerApiTest in 2.414 seconds (process running for 6.117)
+2025-03-24T08:42:45.343+02:00  WARN 28808 --- [recipe-service] [    Test worker] ration$PageModule$WarningLoggingModifier : Serializing PageImpl instances as-is is not supported, meaning that there is no guarantee about the stability of the resulting JSON structure!
 	For a stable JSON structure, please use Spring Data's PagedModel (globally via @EnableSpringDataWebSupport(pageSerializationMode = VIA_DTO))
 	or Spring HATEOAS and Spring Data's PagedResourcesAssembler as documented in https://docs.spring.io/spring-data/commons/reference/repositories/core-extensions.html#core.web.pageables.
 
-2025-03-23T09:50:29.465+02:00 ERROR 24264 --- [recipe-service] [    Test worker] d.i.r.web.GlobalExceptionHandler         : Resource not found: Recipe not found in favorites: f55782ea-2cca-4b88-b828-d0b7020600e1
-2025-03-23T09:50:29.492+02:00 ERROR 24264 --- [recipe-service] [    Test worker] d.i.r.web.GlobalExceptionHandler         : Resource not found: Recipe not found with id: f55782ea-2cca-4b88-b828-d0b7020600e1
+2025-03-24T08:42:45.398+02:00 ERROR 28808 --- [recipe-service] [    Test worker] d.i.r.web.GlobalExceptionHandler         : Resource not found: Recipe not found in favorites: dbafb374-116a-4253-b3b8-6230ef42ae11
+2025-03-24T08:42:45.424+02:00 ERROR 28808 --- [recipe-service] [    Test worker] d.i.r.web.GlobalExceptionHandler         : Resource not found: Recipe not found with id: dbafb374-116a-4253-b3b8-6230ef42ae11
 </pre>
 </span>
 </div>
@@ -199,7 +199,7 @@ You may wish to exclude one of them to ensure predictable runtime behavior
 <input id="line-wrapping-toggle" type="checkbox" autocomplete="off"/>
 </label>
 </div>Generated by 
-<a href="http://www.gradle.org">Gradle 8.10</a> at Mar 23, 2025, 9:50:31 AM</p>
+<a href="http://www.gradle.org">Gradle 8.10</a> at Mar 24, 2025, 8:42:46 AM</p>
 </div>
 </div>
 </body>

@@ -71,4 +71,8 @@ public class RecipeResponse {
     
     @Schema(description = "Number of users who have favorited this recipe", example = "42")
     private Long favoriteCount;
+    
+    // Comment information
+    @Schema(description = "Number of comments on this recipe", example = "15")
+    private Long commentCount;
 } 

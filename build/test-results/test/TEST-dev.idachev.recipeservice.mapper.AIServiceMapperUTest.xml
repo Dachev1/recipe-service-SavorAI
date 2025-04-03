@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="dev.idachev.recipeservice.mapper.AIServiceMapperUTest" tests="3" skipped="0" failures="0" errors="0" timestamp="2025-03-23T07:50:21" hostname="DACHEV" time="0.048">
+<testsuite name="dev.idachev.recipeservice.mapper.AIServiceMapperUTest" tests="3" skipped="0" failures="0" errors="0" timestamp="2025-03-24T06:42:39" hostname="DACHEV" time="0.024">
   <properties/>
-  <testcase name="givenNullRecipeRequest_whenToSimplifiedResponse_thenThrowNullPointerException()" classname="dev.idachev.recipeservice.mapper.AIServiceMapperUTest" time="0.034"/>
-  <testcase name="givenRecipeRequestWithNullFields_whenToSimplifiedResponse_thenHandleNullsGracefully()" classname="dev.idachev.recipeservice.mapper.AIServiceMapperUTest" time="0.009"/>
-  <testcase name="givenCompleteRecipeRequest_whenToSimplifiedResponse_thenReturnMappedResponse()" classname="dev.idachev.recipeservice.mapper.AIServiceMapperUTest" time="0.002"/>
+  <testcase name="givenNullRecipeRequest_whenToSimplifiedResponse_thenThrowNullPointerException()" classname="dev.idachev.recipeservice.mapper.AIServiceMapperUTest" time="0.018"/>
+  <testcase name="givenRecipeRequestWithNullFields_whenToSimplifiedResponse_thenHandleNullsGracefully()" classname="dev.idachev.recipeservice.mapper.AIServiceMapperUTest" time="0.003"/>
+  <testcase name="givenCompleteRecipeRequest_whenToSimplifiedResponse_thenReturnMappedResponse()" classname="dev.idachev.recipeservice.mapper.AIServiceMapperUTest" time="0.001"/>
   <system-out><![CDATA[]]></system-out>
   <system-err><![CDATA[]]></system-err>
 </testsuite>
