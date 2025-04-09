@@ -74,7 +74,7 @@ public class FavoriteRecipeService {
             try {
                 String generatedImageUrl = recipeImageService.generateRecipeImage(
                         recipe.getTitle(),
-                        recipe.getDescription());
+                        recipe.getServingSuggestions());
 
                 if (StringUtils.hasText(generatedImageUrl)) {
                     recipe.setImageUrl(generatedImageUrl);

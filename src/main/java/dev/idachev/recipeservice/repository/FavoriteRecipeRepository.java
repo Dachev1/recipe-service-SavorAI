@@ -17,6 +17,8 @@ public interface FavoriteRecipeRepository extends JpaRepository<FavoriteRecipe, 
 
     List<FavoriteRecipe> findByUserId(UUID userId);
 
+    List<FavoriteRecipe> findByRecipeId(UUID recipeId);
+
     boolean existsByUserIdAndRecipeId(UUID userId, UUID recipeId);
 
     long countByRecipeId(UUID recipeId);
@@ -24,4 +26,6 @@ public interface FavoriteRecipeRepository extends JpaRepository<FavoriteRecipe, 
     Optional<FavoriteRecipe> findByUserIdAndRecipeId(UUID userId, UUID recipeId);
 
     void deleteByUserIdAndRecipeId(UUID userId, UUID recipeId);
+
+    void deleteByRecipeId(UUID recipeId);
 } 

@@ -65,25 +65,25 @@ public class RecipeServiceUTest {
 
         RecipeRequest request = RecipeRequest.builder()
                 .title("Test Recipe")
-                .description("Test Description")
+                .servingSuggestions("Test Description")
                 .build();
 
         Recipe recipe = Recipe.builder()
                 .title("Test Recipe")
-                .description("Test Description")
+                .servingSuggestions("Test Description")
                 .build();
 
         Recipe savedRecipe = Recipe.builder()
                 .id(UUID.randomUUID())
                 .title("Test Recipe")
-                .description("Test Description")
+                .servingSuggestions("Test Description")
                 .userId(userId)
                 .build();
 
         RecipeResponse response = RecipeResponse.builder()
                 .id(savedRecipe.getId())
                 .title(savedRecipe.getTitle())
-                .description(savedRecipe.getDescription())
+                .servingSuggestions(savedRecipe.getServingSuggestions())
                 .build();
 
         when(recipeMapper.toEntity(request)).thenReturn(recipe);
@@ -99,7 +99,7 @@ public class RecipeServiceUTest {
         assertNotNull(result);
         assertEquals(savedRecipe.getId(), result.getId());
         assertEquals(savedRecipe.getTitle(), result.getTitle());
-        assertEquals(savedRecipe.getDescription(), result.getDescription());
+        assertEquals(savedRecipe.getServingSuggestions(), result.getServingSuggestions());
         assertEquals(0L, result.getFavoriteCount());
         assertFalse(result.getIsFavorite());
 
@@ -117,20 +117,20 @@ public class RecipeServiceUTest {
 
         RecipeRequest request = RecipeRequest.builder()
                 .title("Test Recipe")
-                .description("Test Description")
+                .servingSuggestions("Test Description")
                 .build();
 
         String imageUrl = "http://example.com/image.jpg";
 
         Recipe recipe = Recipe.builder()
                 .title("Test Recipe")
-                .description("Test Description")
+                .servingSuggestions("Test Description")
                 .build();
 
         Recipe savedRecipe = Recipe.builder()
                 .id(UUID.randomUUID())
                 .title("Test Recipe")
-                .description("Test Description")
+                .servingSuggestions("Test Description")
                 .userId(userId)
                 .imageUrl(imageUrl)
                 .build();
@@ -138,12 +138,12 @@ public class RecipeServiceUTest {
         RecipeResponse response = RecipeResponse.builder()
                 .id(savedRecipe.getId())
                 .title(savedRecipe.getTitle())
-                .description(savedRecipe.getDescription())
+                .servingSuggestions(savedRecipe.getServingSuggestions())
                 .imageUrl(savedRecipe.getImageUrl())
                 .build();
 
         when(mockImage.isEmpty()).thenReturn(false);
-        when(recipeImageService.processRecipeImage(request.getTitle(), request.getDescription(), mockImage)).thenReturn(imageUrl);
+        when(recipeImageService.processRecipeImage(request.getTitle(), request.getServingSuggestions(), mockImage)).thenReturn(imageUrl);
         when(recipeMapper.toEntity(request)).thenReturn(recipe);
         when(recipeRepository.save(any(Recipe.class))).thenReturn(savedRecipe);
         when(recipeMapper.toResponse(savedRecipe)).thenReturn(response);
@@ -154,7 +154,7 @@ public class RecipeServiceUTest {
         // Then
         assertNotNull(result);
         assertEquals(imageUrl, response.getImageUrl());
-        verify(recipeImageService).processRecipeImage(request.getTitle(), request.getDescription(), mockImage);
+        verify(recipeImageService).processRecipeImage(request.getTitle(), request.getServingSuggestions(), mockImage);
     }
 
     @Test
@@ -167,14 +167,14 @@ public class RecipeServiceUTest {
         Recipe recipe = Recipe.builder()
                 .id(recipeId)
                 .title("Test Recipe")
-                .description("Test Description")
+                .servingSuggestions("Test Description")
                 .userId(userId)
                 .build();
 
         RecipeResponse response = RecipeResponse.builder()
                 .id(recipeId)
                 .title("Test Recipe")
-                .description("Test Description")
+                .servingSuggestions("Test Description")
                 .build();
 
         when(recipeRepository.findById(recipeId)).thenReturn(Optional.of(recipe));
@@ -221,7 +221,7 @@ public class RecipeServiceUTest {
         when(recipeSearchService.getAllRecipes(pageable, userId)).thenReturn(expectedPage);
 
         //When
-        Page<RecipeResponse> result = recipeService.getAllRecipes(pageable, userId);
+        Page<RecipeResponse> result = recipeService.getAllRecipes(pageable, userId, true);
 
         // Then
         assertNotNull(result);
@@ -238,27 +238,27 @@ public class RecipeServiceUTest {
 
         RecipeRequest request = RecipeRequest.builder()
                 .title("Updated Recipe")
-                .description("Updated Description")
+                .servingSuggestions("Updated Description")
                 .build();
 
         Recipe existingRecipe = Recipe.builder()
                 .id(recipeId)
                 .userId(userId)
                 .title("Original Recipe")
-                .description("Original Description")
+                .servingSuggestions("Original Description")
                 .build();
 
         Recipe updatedRecipe = Recipe.builder()
                 .id(recipeId)
                 .userId(userId)
                 .title("Updated Recipe")
-                .description("Updated Description")
+                .servingSuggestions("Updated Description")
                 .build();
 
         RecipeResponse response = RecipeResponse.builder()
                 .id(recipeId)
                 .title("Updated Recipe")
-                .description("Updated Description")
+                .servingSuggestions("Updated Description")
                 .build();
 
         when(recipeRepository.findById(recipeId)).thenReturn(Optional.of(existingRecipe));
@@ -271,7 +271,7 @@ public class RecipeServiceUTest {
         // Then
         assertNotNull(result);
         assertEquals("Updated Recipe", result.getTitle());
-        assertEquals("Updated Description", result.getDescription());
+        assertEquals("Updated Description", result.getServingSuggestions());
 
         verify(recipeRepository).findById(recipeId);
         verify(recipeMapper).updateEntityFromRequest(existingRecipe, request);

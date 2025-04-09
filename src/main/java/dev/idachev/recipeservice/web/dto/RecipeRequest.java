@@ -30,9 +30,9 @@ public class RecipeRequest {
     @Size(max = 255, message = "Title must be less than 255 characters")
     private String title;
 
-    @Schema(description = "Recipe description", example = "Classic Italian pasta dish with eggs, cheese, pancetta, and pepper")
-    @Size(max = 1000, message = "Description must be less than 1000 characters")
-    private String description;
+    @Schema(description = "Serving suggestions including garnishes, sides, and pairings", example = "Serve hot with a sprinkle of fresh parsley and a glass of white wine")
+    @Size(max = 1000, message = "Serving suggestions must be less than 1000 characters")
+    private String servingSuggestions;
 
     @Schema(description = "Step-by-step cooking instructions", example = "1. Boil pasta until al dente\n2. In a separate pan, cook pancetta...", required = true)
     @NotBlank(message = "Instructions are required")

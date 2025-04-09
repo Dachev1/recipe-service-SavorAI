@@ -6,6 +6,7 @@ import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.MalformedJwtException;
+import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.UnsupportedJwtException;
 import io.jsonwebtoken.security.SignatureException;
 import lombok.extern.slf4j.Slf4j;
@@ -57,30 +58,35 @@ public class JwtUtil {
      * Extract user ID from JWT token.
      */
     public UUID extractUserId(String token) {
-        Claims claims = extractAllClaims(token);
-        
-        // Try to extract userId from common claim keys
-        for (String key : List.of("userId", "user_id", "id", "sub")) {
-            Object claim = claims.get(key);
-            if (claim != null) {
-                String idStr = claim.toString();
-                try {
-                    return UUID.fromString(idStr);
-                } catch (IllegalArgumentException e) {
-                    if (idStr.matches("\\d+")) {
-                        return UUID.nameUUIDFromBytes(idStr.getBytes());
+        try {
+            final Claims claims = extractAllClaims(token);
+            // Try to get UUID directly first
+            try {
+                return claims.get("userId", UUID.class);
+            } catch (Exception e) {
+                // If that fails, get as String and convert
+                String userIdStr = claims.get("userId", String.class);
+                if (userIdStr != null && !userIdStr.isEmpty()) {
+                    try {
+                        return UUID.fromString(userIdStr);
+                    } catch (IllegalArgumentException iae) {
+                        log.error("Invalid UUID format in token: {}", iae.getMessage());
+                        return null;
                     }
                 }
+                log.warn("No userId claim found in token");
+                return null;
             }
+        } catch (ExpiredJwtException e) {
+            log.error("Token expired while extracting userId: {}", e.getMessage());
+            return null;
+        } catch (MalformedJwtException e) {
+            log.error("Malformed token while extracting userId: {}", e.getMessage());
+            return null;
+        } catch (Exception e) {
+            log.error("Error extracting userId from token: {}", e.getMessage());
+            return null;
         }
-        
-        // Last resort: use subject
-        String subject = claims.getSubject();
-        if (subject != null) {
-            return UUID.nameUUIDFromBytes(subject.getBytes());
-        }
-        
-        throw new IllegalArgumentException("Token does not contain valid user identification");
     }
     
     /**
@@ -182,20 +188,25 @@ public class JwtUtil {
      */
     public boolean validateToken(String token) {
         try {
-            // Log token details for debugging
-            logTokenDetails(token);
-            
-            // Validate token with signing key
-            Jwts.parserBuilder().setSigningKey(signingKey).build().parseClaimsJws(token);
+            Jwts.parserBuilder()
+                .setSigningKey(signingKey)
+                .build()
+                .parseClaimsJws(token);
             return true;
         } catch (ExpiredJwtException e) {
-            log.warn("JWT token expired");
+            log.error("JWT token expired: {}", e.getMessage());
             return false;
-        } catch (UnsupportedJwtException | MalformedJwtException | SignatureException e) {
-            log.warn("Invalid JWT token: {}", e.getMessage());
+        } catch (MalformedJwtException e) {
+            log.error("Invalid JWT token format: {}", e.getMessage());
+            return false;
+        } catch (SignatureException e) {
+            log.error("Invalid JWT signature: {}", e.getMessage());
+            return false;
+        } catch (UnsupportedJwtException e) {
+            log.error("Unsupported JWT token: {}", e.getMessage());
             return false;
         } catch (Exception e) {
-            log.warn("JWT validation error: {}", e.getMessage());
+            log.error("Invalid JWT: {}", e.getMessage());
             return false;
         }
     }

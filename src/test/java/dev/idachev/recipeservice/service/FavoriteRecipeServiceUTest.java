@@ -54,7 +54,7 @@ public class FavoriteRecipeServiceUTest {
         Recipe recipe = Recipe.builder()
                 .id(recipeId)
                 .title("Favorite Recipe")
-                .description("A recipe to be favorited")
+                .servingSuggestions("A recipe to be favorited")
                 .imageUrl("http://example.com/image.jpg")
                 .isAiGenerated(false)
                 .build();
@@ -62,7 +62,7 @@ public class FavoriteRecipeServiceUTest {
         RecipeResponse recipeResponse = RecipeResponse.builder()
                 .id(recipeId)
                 .title("Favorite Recipe")
-                .description("A recipe to be favorited")
+                .servingSuggestions("A recipe to be favorited")
                 .imageUrl("http://example.com/image.jpg")
                 .build();
 
@@ -148,7 +148,7 @@ public class FavoriteRecipeServiceUTest {
         Recipe recipe = Recipe.builder()
                 .id(recipeId)
                 .title("AI Recipe")
-                .description("AI generated recipe")
+                .servingSuggestions("AI generated recipe")
                 .isAiGenerated(true)
                 .imageUrl(null) // No image yet
                 .build();
@@ -169,7 +169,7 @@ public class FavoriteRecipeServiceUTest {
 
         when(favoriteRecipeRepository.existsByUserIdAndRecipeId(userId, recipeId)).thenReturn(false);
         when(recipeRepository.findById(recipeId)).thenReturn(Optional.of(recipe));
-        when(recipeImageService.generateRecipeImage(recipe.getTitle(), recipe.getDescription()))
+        when(recipeImageService.generateRecipeImage(recipe.getTitle(), recipe.getServingSuggestions()))
                 .thenReturn(generatedImageUrl);
         when(favoriteRecipeRepository.save(any(FavoriteRecipe.class))).thenReturn(savedFavorite);
         when(recipeMapper.toResponse(recipe)).thenReturn(recipeResponse);
@@ -183,7 +183,7 @@ public class FavoriteRecipeServiceUTest {
         assertEquals(recipeId, result.getRecipeId());
         assertEquals(generatedImageUrl, result.getRecipe().getImageUrl());
 
-        verify(recipeImageService).generateRecipeImage(recipe.getTitle(), recipe.getDescription());
+        verify(recipeImageService).generateRecipeImage(recipe.getTitle(), recipe.getServingSuggestions());
         verify(recipeRepository).save(recipe);
     }
 

@@ -92,7 +92,7 @@ public class RecipeControllerApiTest {
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.id").value(expectedResponse.getId().toString()))
                 .andExpect(jsonPath("$.title").value(expectedResponse.getTitle()))
-                .andExpect(jsonPath("$.description").value(expectedResponse.getDescription()));
+                .andExpect(jsonPath("$.servingSuggestions").value(expectedResponse.getServingSuggestions()));
 
         verify(userService).getUserIdFromToken(VALID_TOKEN);
         verify(recipeService).createRecipe(any(RecipeRequest.class), any(MockMultipartFile.class), eq(TEST_USER_ID));
@@ -118,7 +118,7 @@ public class RecipeControllerApiTest {
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.id").value(expectedResponse.getId().toString()))
                 .andExpect(jsonPath("$.title").value(expectedResponse.getTitle()))
-                .andExpect(jsonPath("$.description").value(expectedResponse.getDescription()));
+                .andExpect(jsonPath("$.servingSuggestions").value(expectedResponse.getServingSuggestions()));
 
         verify(userService).getUserIdFromToken(VALID_TOKEN);
         verify(recipeService).createRecipe(any(RecipeRequest.class), eq(TEST_USER_ID));
@@ -140,7 +140,7 @@ public class RecipeControllerApiTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(expectedResponse.getId().toString()))
                 .andExpect(jsonPath("$.title").value(expectedResponse.getTitle()))
-                .andExpect(jsonPath("$.description").value(expectedResponse.getDescription()));
+                .andExpect(jsonPath("$.servingSuggestions").value(expectedResponse.getServingSuggestions()));
 
         verify(userService).getUserIdFromToken(VALID_TOKEN);
         verify(recipeService).getRecipeById(TEST_RECIPE_ID, TEST_USER_ID);
@@ -158,7 +158,7 @@ public class RecipeControllerApiTest {
         Page<RecipeResponse> pageResponse = new PageImpl<>(recipes);
 
         when(userService.getUserIdFromToken(VALID_TOKEN)).thenReturn(TEST_USER_ID);
-        when(recipeService.getAllRecipes(any(Pageable.class), eq(TEST_USER_ID))).thenReturn(pageResponse);
+        when(recipeService.getAllRecipes(any(Pageable.class), eq(TEST_USER_ID), eq(true))).thenReturn(pageResponse);
 
         // When & Then
         mockMvc.perform(get("/api/v1/recipes")
@@ -168,7 +168,7 @@ public class RecipeControllerApiTest {
                 .andExpect(jsonPath("$.totalElements").value(2));
 
         verify(userService).getUserIdFromToken(VALID_TOKEN);
-        verify(recipeService).getAllRecipes(any(Pageable.class), eq(TEST_USER_ID));
+        verify(recipeService).getAllRecipes(any(Pageable.class), eq(TEST_USER_ID), eq(true));
     }
 
     @Test
@@ -218,7 +218,8 @@ public class RecipeControllerApiTest {
                         .header(AUTHORIZATION_HEADER, VALID_TOKEN))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(updatedResponse.getId().toString()))
-                .andExpect(jsonPath("$.title").value("Updated Recipe Title"));
+                .andExpect(jsonPath("$.title").value("Updated Recipe Title"))
+                .andExpect(jsonPath("$.servingSuggestions").value(updatedResponse.getServingSuggestions()));
 
         verify(userService).getUserIdFromToken(VALID_TOKEN);
         verify(recipeService).updateRecipe(eq(TEST_RECIPE_ID), any(RecipeRequest.class), eq(TEST_USER_ID));
@@ -298,7 +299,7 @@ public class RecipeControllerApiTest {
     private RecipeRequest createTestRecipeRequest() {
         RecipeRequest request = new RecipeRequest();
         request.setTitle("Test Recipe");
-        request.setDescription("A delicious test recipe");
+        request.setServingSuggestions("A delicious test recipe");
         request.setIngredients(Arrays.asList("ingredient1", "ingredient2"));
         request.setInstructions("Test instructions");
         return request;
@@ -308,7 +309,7 @@ public class RecipeControllerApiTest {
         RecipeResponse response = new RecipeResponse();
         response.setId(TEST_RECIPE_ID);
         response.setTitle("Test Recipe");
-        response.setDescription("A delicious test recipe");
+        response.setServingSuggestions("A delicious test recipe");
         response.setIngredients(Arrays.asList("ingredient1", "ingredient2"));
         response.setInstructions("Test instructions");
         response.setImageUrl("http://test-image-url.com");

@@ -5,6 +5,7 @@ import dev.idachev.recipeservice.exception.ResourceNotFoundException;
 import dev.idachev.recipeservice.exception.UnauthorizedException;
 import dev.idachev.recipeservice.user.client.UserClient;
 import dev.idachev.recipeservice.user.dto.UserDTO;
+import dev.idachev.recipeservice.user.dto.UserResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -102,54 +103,67 @@ public class UserService {
     }
 
     /**
-     * Get user ID from username.
-     * Since UserDTO doesn't contain ID, we need this helper method.
-     *
-     * @param username Username to lookup
-     * @return UUID representing the user ID
+     * Get user ID from token
+     */
+    public UUID getUserIdFromToken(String token, String action) {
+        validateTokenFormat(token);
+        
+        try {
+            // Make just one API call to get the user profile with ID
+            ResponseEntity<UserResponse> userResponse = userClient.getCurrentUserProfile(token);
+            if (userResponse.getBody() != null && userResponse.getBody().getId() != null) {
+                UUID userId = userResponse.getBody().getId();
+                log.debug("User {} (ID: {}) {}", userResponse.getBody().getUsername(), userId, action);
+                return userId;
+            }
+        } catch (Exception e) {
+            log.error("Error extracting user ID from token: {}", e.getMessage());
+        }
+        
+        // Only fall back to username-based ID if the profile request fails completely
+        try {
+            UserDTO user = getCurrentUser(token);
+            log.warn("Falling back to deterministic UUID generation for username: {}", user.getUsername());
+            return UUID.nameUUIDFromBytes(user.getUsername().getBytes());
+        } catch (Exception e) {
+            log.error("Complete failure to get user ID, using anonymous ID: {}", e.getMessage());
+            return UUID.nameUUIDFromBytes("anonymous".getBytes());
+        }
+    }
+
+    /**
+     * Get user ID from authorization token without action logging
+     */
+    public UUID getUserIdFromToken(String token) {
+        return getUserIdFromToken(token, "requesting resource");
+    }
+
+    /**
+     * Validate token without returning user information
+     */
+    public void validateToken(String token) {
+        getCurrentUser(token);
+    }
+
+    /**
+     * Get user ID from username
      */
     public UUID getUserIdFromUsername(String username) {
         if (username == null || username.isEmpty()) {
             throw new IllegalArgumentException("Username cannot be null or empty");
         }
         
-        // Generate a consistent UUID based on the username
-        // This is a simple approach - in production you might want to use a database lookup
+        try {
+            ResponseEntity<UserResponse> response = userClient.getUserProfileByUsername(username);
+            if (response.getBody() != null && response.getBody().getId() != null) {
+                return response.getBody().getId();
+            }
+        } catch (Exception e) {
+            log.error("Error retrieving user ID for username {}: {}", username, e.getMessage());
+        }
+        
+        // Fallback to deterministic UUID if user service fails
+        log.warn("Falling back to deterministic UUID generation for username: {}", username);
         return UUID.nameUUIDFromBytes(username.getBytes());
-    }
-
-    /**
-     * Get user ID from authorization token with action logging
-     *
-     * @param token  JWT authorization token
-     * @param action Description of the action being performed
-     * @return User's UUID
-     */
-    public UUID getUserIdFromToken(String token, String action) {
-        UserDTO user = getCurrentUser(token);
-        UUID userId = getUserIdFromUsername(user.getUsername());
-        log.debug("User {} (ID: {}) {}", user.getUsername(), userId, action);
-        return userId;
-    }
-
-    /**
-     * Get user ID from authorization token without action logging
-     *
-     * @param token JWT authorization token
-     * @return User's UUID
-     */
-    public UUID getUserIdFromToken(String token) {
-        UserDTO user = getCurrentUser(token);
-        return getUserIdFromUsername(user.getUsername());
-    }
-
-    /**
-     * Validate token without returning user information
-     *
-     * @param token JWT authorization token
-     * @throws UnauthorizedException if token is invalid
-     */
-    public void validateToken(String token) {
-        getCurrentUser(token);
     }
 } 

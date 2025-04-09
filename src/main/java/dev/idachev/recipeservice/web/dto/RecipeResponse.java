@@ -32,8 +32,8 @@ public class RecipeResponse {
     @Schema(description = "Recipe title", example = "Spaghetti Carbonara")
     private String title;
     
-    @Schema(description = "Recipe description", example = "Classic Italian pasta dish with eggs, cheese, pancetta, and pepper")
-    private String description;
+    @Schema(description = "Serving suggestions for the recipe", example = "Serve with freshly grated Parmesan and black pepper")
+    private String servingSuggestions;
     
     @Schema(description = "Step-by-step cooking instructions", example = "1. Boil pasta until al dente\n2. In a separate pan, cook pancetta...")
     private String instructions;

@@ -210,4 +210,22 @@ public class RecipeController {
         
         return ResponseEntity.ok(recipeService.generateMeal(ingredients));
     }
+
+    @Operation(summary = "Save generated recipe", description = "Saves an AI-generated recipe")
+    @ApiResponses({
+            @ApiResponse(responseCode = "201", description = "Recipe saved successfully", 
+                    content = @Content(schema = @Schema(implementation = RecipeResponse.class))),
+            @ApiResponse(responseCode = "400", description = "Invalid input"),
+            @ApiResponse(responseCode = "401", description = "Unauthorized")
+    })
+    @PostMapping("/save")
+    public ResponseEntity<RecipeResponse> saveGeneratedRecipe(
+            @Parameter(description = "Recipe data") 
+            @Valid @RequestBody RecipeRequest request,
+            @RequestHeader("Authorization") String token) {
+        
+        UUID userId = userService.getUserIdFromToken(token);
+        RecipeResponse savedRecipe = recipeService.createRecipe(request, userId);
+        return ResponseEntity.status(HttpStatus.CREATED).body(savedRecipe);
+    }
 } 

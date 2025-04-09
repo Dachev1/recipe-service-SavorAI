@@ -32,12 +32,12 @@ public class RecipeImageService {
      * If a MultipartFile is provided, it will be uploaded.
      * If no image is provided but a title is available, an image will be generated.
      *
-     * @param title       Recipe title, used for generating an image if none is uploaded
-     * @param description Recipe description, used for generating an image
-     * @param image       Optional image file to upload
+     * @param title               Recipe title, used for generating an image if none is uploaded
+     * @param servingSuggestions  Recipe serving suggestions, used for generating an image
+     * @param image               Optional image file to upload
      * @return URL of the processed image, or null if no image could be processed
      */
-    public String processRecipeImage(String title, String description, MultipartFile image) {
+    public String processRecipeImage(String title, String servingSuggestions, MultipartFile image) {
         try {
             // If an image file is provided, upload it
             if (image != null && !image.isEmpty()) {
@@ -52,7 +52,7 @@ public class RecipeImageService {
             // Otherwise, if title is available, generate an image
             if (StringUtils.hasText(title)) {
                 log.debug("No image provided, will attempt to generate one for: {}", title);
-                return generateRecipeImage(title, description);
+                return generateRecipeImage(title, servingSuggestions);
             }
 
             log.debug("No image provided and no title available for image generation");
@@ -83,11 +83,11 @@ public class RecipeImageService {
     /**
      * Generate image for a recipe using AI
      *
-     * @param title       Recipe title, used as the primary prompt for generation
-     * @param description Recipe description, used to enhance the prompt
+     * @param title               Recipe title, used as the primary prompt for generation
+     * @param servingSuggestions  Recipe serving suggestions, used to enhance the prompt
      * @return URL of the generated image, or null if generation fails
      */
-    public String generateRecipeImage(String title, String description) {
+    public String generateRecipeImage(String title, String servingSuggestions) {
         if (!StringUtils.hasText(title)) {
             log.warn("Cannot generate image: Recipe title is empty");
             return null;
@@ -95,7 +95,7 @@ public class RecipeImageService {
 
         try {
             log.info("Requesting AI image generation for recipe: {}", title);
-            String imageUrl = aiService.generateRecipeImage(title, description);
+            String imageUrl = aiService.generateRecipeImage(title, servingSuggestions);
 
             if (!StringUtils.hasText(imageUrl)) {
                 log.warn("AI service returned empty image URL for recipe: {}", title);

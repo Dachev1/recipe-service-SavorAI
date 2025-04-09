@@ -1,5 +1,6 @@
 package dev.idachev.recipeservice.web;
 
+import dev.idachev.recipeservice.exception.AIServiceException;
 import dev.idachev.recipeservice.exception.BadRequestException;
 import dev.idachev.recipeservice.exception.ResourceNotFoundException;
 import dev.idachev.recipeservice.exception.UnauthorizedException;
@@ -156,6 +157,26 @@ public class GlobalExceptionHandler {
         );
 
         return new ResponseEntity<>(errorResponse, HttpStatus.UNAUTHORIZED);
+    }
+
+    /**
+     * Handles AIServiceException and returns a BAD_REQUEST response
+     */
+    @ExceptionHandler(AIServiceException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    @ApiResponse(responseCode = "400", description = "AI Service error",
+            content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+    public ResponseEntity<ErrorResponse> handleAIServiceException(AIServiceException ex) {
+        log.error("AI Service error: {}", ex.getMessage());
+
+        ErrorResponse errorResponse = new ErrorResponse(
+                HttpStatus.BAD_REQUEST.value(),
+                ex.getMessage(),
+                LocalDateTime.now(),
+                null
+        );
+
+        return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
     }
 
     /**

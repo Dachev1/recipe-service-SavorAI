@@ -1,9 +1,11 @@
 package dev.idachev.recipeservice.service;
 
+import dev.idachev.recipeservice.exception.AIServiceException;
 import dev.idachev.recipeservice.exception.ResourceNotFoundException;
 import dev.idachev.recipeservice.exception.UnauthorizedAccessException;
 import dev.idachev.recipeservice.infrastructure.ai.AIService;
 import dev.idachev.recipeservice.mapper.RecipeMapper;
+import dev.idachev.recipeservice.model.FavoriteRecipe;
 import dev.idachev.recipeservice.model.Recipe;
 import dev.idachev.recipeservice.repository.FavoriteRecipeRepository;
 import dev.idachev.recipeservice.repository.RecipeRepository;
@@ -79,7 +81,7 @@ public class RecipeService {
     private void processImageIfPresent(RecipeRequest request, MultipartFile image) {
         if (image != null && !image.isEmpty()) {
             String imageUrl = recipeImageService.processRecipeImage(
-                    request.getTitle(), request.getDescription(), image);
+                    request.getTitle(), request.getServingSuggestions(), image);
 
             if (imageUrl != null && !imageUrl.isEmpty()) {
                 request.setImageUrl(imageUrl);
@@ -161,6 +163,19 @@ public class RecipeService {
     @Transactional
     public void deleteRecipe(UUID id, UUID userId) {
         Recipe recipe = checkRecipePermission(id, userId);
+        
+        // First delete all favorites related to this recipe
+        List<UUID> userIds = favoriteRecipeRepository.findByRecipeId(id).stream()
+                .map(FavoriteRecipe::getUserId)
+                .toList();
+        
+        // Log how many favorite entries will be deleted
+        if (!userIds.isEmpty()) {
+            log.info("Deleting {} favorite entries for recipe {}", userIds.size(), id);
+            favoriteRecipeRepository.deleteByRecipeId(id);
+        }
+        
+        // Then delete the recipe
         recipeRepository.delete(recipe);
         log.info("Recipe with ID {} deleted successfully", id);
     }
@@ -178,7 +193,12 @@ public class RecipeService {
      */
     public SimplifiedRecipeResponse generateMeal(List<String> ingredients) {
         log.info("Generating meal from {} ingredients", ingredients != null ? ingredients.size() : 0);
-        return aiService.generateRecipeFromIngredients(ingredients);
+        try {
+            return aiService.generateRecipeFromIngredients(ingredients);
+        } catch (AIServiceException e) {
+            log.error("AI Service error: {}", e.getMessage());
+            throw e; // Propagate the original error
+        }
     }
 
     /**

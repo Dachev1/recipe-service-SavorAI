@@ -93,19 +93,35 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private String extractJwtFromRequest(HttpServletRequest request) {
         String bearerToken = request.getHeader("Authorization");
-        if (StringUtils.hasText(bearerToken) && bearerToken.startsWith("Bearer ")) {
-            String token = bearerToken.substring(7);
-            while (token.endsWith(".")) {
-                token = token.substring(0, token.length() - 1);
-            }
-            return token;
+        if (!StringUtils.hasText(bearerToken) || !bearerToken.startsWith("Bearer ")) {
+            return "";
         }
-        return "";
+        
+        // Extract token and clean it
+        String token = bearerToken.substring(7).trim();
+        
+        // Remove any trailing dots that might cause parsing issues
+        while (token.endsWith(".")) {
+            token = token.substring(0, token.length() - 1);
+        }
+        
+        // Additional validation to make sure we have a proper JWT with 3 parts
+        if (!token.isEmpty() && token.split("\\.").length != 3) {
+            log.debug("Malformed JWT token structure");
+            return "";
+        }
+        
+        return token;
     }
 
     private boolean isTokenBlacklisted(String token) {
-        tokenBlacklist.entrySet().removeIf(entry -> entry.getValue() < System.currentTimeMillis());
-        return tokenBlacklist.containsKey(token);
+        // Periodic cleanup of expired tokens (only if token is provided to minimize unnecessary operations)
+        if (!token.isEmpty()) {
+            long currentTime = System.currentTimeMillis();
+            tokenBlacklist.entrySet().removeIf(entry -> entry.getValue() < currentTime);
+            return tokenBlacklist.containsKey(token);
+        }
+        return false;
     }
 
     private void handleAuthenticationFailure(HttpServletResponse response,

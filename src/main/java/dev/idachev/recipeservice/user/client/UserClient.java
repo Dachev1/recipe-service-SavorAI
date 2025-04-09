@@ -1,6 +1,7 @@
 package dev.idachev.recipeservice.user.client;
 
 import dev.idachev.recipeservice.user.dto.UserDTO;
+import dev.idachev.recipeservice.user.dto.UserResponse;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -16,26 +17,31 @@ import java.util.UUID;
 public interface UserClient {
     /**
      * Get user information by ID.
-     *
-     * @param token JWT token for authentication
-     * @param userId User ID to retrieve
-     * @return User data
      */
     @GetMapping("/api/v1/user/{userId}")
     ResponseEntity<UserDTO> getUserById(@RequestHeader("Authorization") String token, @PathVariable("userId") UUID userId);
 
     /**
-     * Get current user information based on the JWT token.
-     *
-     * @param token JWT token for authentication
-     * @return Current user data
+     * Get current user information (basic version).
      */
     @GetMapping("/api/v1/user/current-user")
     ResponseEntity<UserDTO> getCurrentUser(@RequestHeader("Authorization") String token);
 
     /**
-     * Get user by ID
+     * Get user by ID.
      */
     @GetMapping("/api/v1/users/{id}")
     ResponseEntity<UserDTO> getUserById(@PathVariable("id") UUID userId);
+    
+    /**
+     * Get current user profile with complete information.
+     */
+    @GetMapping("/api/v1/profile")
+    ResponseEntity<UserResponse> getCurrentUserProfile(@RequestHeader("Authorization") String token);
+    
+    /**
+     * Get user profile by username.
+     */
+    @GetMapping("/api/v1/profile/{username}")
+    ResponseEntity<UserResponse> getUserProfileByUsername(@PathVariable("username") String username);
 } 

@@ -29,7 +29,7 @@ class AIServiceMapperUTest {
 
         RecipeRequest request = RecipeRequest.builder()
                 .title("Test Recipe")
-                .description("Test Description")
+                .servingSuggestions("Test Description")
                 .instructions("Instruction 1\nInstruction 2")
                 .ingredients(ingredients)
                 .totalTimeMinutes(30)
@@ -46,7 +46,7 @@ class AIServiceMapperUTest {
         // Then
         assertNotNull(response);
         assertEquals("Test Recipe", response.getTitle());
-        assertEquals("Test Description", response.getDescription());
+        assertEquals("Test Description", response.getServingSuggestions());
         assertEquals("Instruction 1\nInstruction 2", response.getInstructions());
         assertEquals(ingredients, response.getIngredients());
         assertEquals(imageUrl, response.getImageUrl());
@@ -73,7 +73,7 @@ class AIServiceMapperUTest {
         // Then
         assertNotNull(response);
         assertEquals("Test Recipe", response.getTitle());
-        assertNull(response.getDescription());
+        assertNull(response.getServingSuggestions());
         assertNull(response.getInstructions());
         assertEquals(Collections.emptyList(), response.getIngredients());
         assertNull(response.getImageUrl());

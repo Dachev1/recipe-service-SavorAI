@@ -1,9 +1,17 @@
 package dev.idachev.recipeservice.infrastructure.ai;
 
 /**
- * Centralized storage for AI prompts used in recipe generation
+ * Centralized storage for AI prompts used in recipe generation.
+ * This utility class contains static methods only and should not be instantiated.
  */
-public class RecipePrompts {
+public final class RecipePrompts {
+
+    /**
+     * Private constructor to prevent instantiation
+     */
+    private RecipePrompts() {
+        // Utility class, no instantiation
+    }
 
     /**
      * System prompt for generating a recipe from ingredients
@@ -15,13 +23,13 @@ public class RecipePrompts {
                 Your task is to create ONE detailed recipe using the ingredients provided by the user. Be creative but realistic.
                 Include common pantry staples (salt, pepper, oil, basic spices) even if not explicitly listed.
                 
-                IMPORTANT: EVERY TIME YOU ARE ASKED, CREATE A COMPLETELY DIFFERENT RECIPE, EVEN IF THE INGREDIENTS ARE THE SAME.
-                Pay attention to any style, cuisine, or cooking method specified in the user's request.
+                IMPORTANT: Only reject obvious non-food items (cars, electronics, furniture). Accept all common food ingredients.
+                If non-food items are included, return a JSON error: {"error":"Cannot create recipe with non-food items","nonFoodItems":["item1","item2"]}
                 
                 FORMAT YOUR RESPONSE AS VALID JSON with this exact structure:
                 {
                     "title": "Recipe Title",
-                    "description": "A mouth-watering description that makes someone want to cook this dish",
+                    "servingSuggestions": "Serving details, garnishes, and pairings",
                     "ingredients": ["Ingredient 1 with quantity", "Ingredient 2 with quantity", ...],
                     "instructions": "Detailed, step-by-step cooking instructions with numbered steps",
                     "totalTimeMinutes": number (prep + cooking time),
@@ -40,36 +48,41 @@ public class RecipePrompts {
                 3. Estimate nutrition information realistically
                 4. Create visually appealing dishes that would photograph well
                 5. Instructions should be clear and easy to follow
-                6. ALWAYS CREATE A DIFFERENT RECIPE - never repeat a recipe you've created before
+                6. Always create different recipes, never repeat previous ones
+                7. Provide specific serving suggestions with garnishes and pairings
+                8. Never reject actual food items
                 
-                Return ONLY the JSON object, no additional text.
+                EXTREMELY IMPORTANT: Return ONLY raw JSON. No markdown blocks or explanations.
                 """;
     }
 
     /**
      * Prompt for generating a recipe image
      */
-    public static String getRecipeImagePrompt(String recipeTitle, String recipeDescription) {
-        return "Professional food photography of " + recipeTitle +
-                ". Overhead shot on a rustic wooden table with beautiful natural lighting. " +
-                "The dish looks absolutely delicious with vibrant colors and perfect presentation. " +
-                "Show the complete dish styled by a food photographer. " +
-                "Food description: " + (recipeDescription != null ? recipeDescription : "");
+    public static String getRecipeImagePrompt(String recipeTitle, String servingSuggestions) {
+        StringBuilder promptBuilder = new StringBuilder(256)
+            .append("Professional food photography of ")
+            .append(recipeTitle)
+            .append(". Overhead shot on a rustic wooden table with beautiful natural lighting. ")
+            .append("The dish looks absolutely delicious with vibrant colors and perfect presentation. ");
+        
+        if (servingSuggestions != null && !servingSuggestions.isEmpty()) {
+            promptBuilder.append("Serving suggestions: ").append(servingSuggestions);
+        }
+        
+        return promptBuilder.toString();
     }
 
     /**
      * Prompt template for unique recipe generation from ingredients
-     *
-     * @param ingredients Comma-separated list of ingredients
-     * @param uniqueId    Unique identifier for the recipe
-     * @return Formatted prompt text
      */
     public static String getUniqueRecipePrompt(String ingredients, String uniqueId) {
         return String.format(
                 "I need a creative and unique recipe using these ingredients: %s. " +
-                        "Please create a dish that makes the best use of these ingredients. " +
-                        "Be creative with the cuisine style, cooking method, and meal type. " +
-                        "Make it unique with ID: %s",
+                "Only reject obviously non-food items like cars, electronics, etc. " +
+                "Accept all normal food ingredients. " +
+                "Be creative with cuisine style and cooking method. " +
+                "Make it unique with ID: %s",
                 ingredients, uniqueId
         );
     }

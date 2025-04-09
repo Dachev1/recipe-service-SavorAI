@@ -27,13 +27,14 @@ public class AIServiceMapper {
 
         return SimplifiedRecipeResponse.builder()
                 .title(recipe.getTitle())
-                .description(recipe.getDescription())
+                .description(recipe.getServingSuggestions())
                 .instructions(recipe.getInstructions())
                 .ingredients(recipe.getIngredients() != null ? recipe.getIngredients() : Collections.emptyList())
                 .imageUrl(imageUrl)
                 .totalTimeMinutes(recipe.getTotalTimeMinutes())
                 .macros(extractMacros(recipe))
                 .difficulty(recipe.getDifficulty() != null ? recipe.getDifficulty().toString() : "MEDIUM")
+                .servingSuggestions(recipe.getServingSuggestions())
                 .build();
     }
 

@@ -41,4 +41,7 @@ public class SimplifiedRecipeResponse {
     
     @Schema(description = "Recipe difficulty level", example = "MEDIUM")
     private String difficulty;
+    
+    @Schema(description = "Serving suggestions including garnishes, sides, and pairings", example = "Serve hot with a sprinkle of fresh parsley and a glass of white wine")
+    private String servingSuggestions;
 } 

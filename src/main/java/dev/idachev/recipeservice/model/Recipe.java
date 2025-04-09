@@ -24,9 +24,6 @@ public class Recipe {
     @Column
     private String title;
 
-    @Column
-    private String description;
-
     @Column(columnDefinition = "TEXT")
     private String instructions;
 
@@ -35,6 +32,9 @@ public class Recipe {
 
     @Column(columnDefinition = "TEXT")
     private String ingredients;
+
+    @Column(columnDefinition = "TEXT")
+    private String servingSuggestions;
 
     @Column
     private UUID userId;

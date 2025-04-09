@@ -71,7 +71,7 @@ public class RecipeSearchServiceUTest {
                 .title(recipe2.getTitle())
                 .build();
 
-        when(recipeRepository.findByTitleContainingIgnoreCaseOrDescriptionContainingIgnoreCase(keyword, keyword, pageable))
+        when(recipeRepository.findByTitleContainingIgnoreCaseOrServingSuggestionsContainingIgnoreCase(keyword, keyword, pageable))
                 .thenReturn(recipePage);
         when(recipeMapper.toResponse(recipe1)).thenReturn(response1);
         when(recipeMapper.toResponse(recipe2)).thenReturn(response2);
@@ -85,7 +85,7 @@ public class RecipeSearchServiceUTest {
         assertNotNull(result);
         assertEquals(2, result.getTotalElements());
 
-        verify(recipeRepository).findByTitleContainingIgnoreCaseOrDescriptionContainingIgnoreCase(keyword, keyword, pageable);
+        verify(recipeRepository).findByTitleContainingIgnoreCaseOrServingSuggestionsContainingIgnoreCase(keyword, keyword, pageable);
         verify(recipeMapper, times(2)).toResponse(any(Recipe.class));
         verify(favoriteRecipeRepository, times(2)).countByRecipeId(any(UUID.class));
         verify(favoriteRecipeRepository, times(2)).existsByUserIdAndRecipeId(eq(userId), any(UUID.class));
@@ -125,7 +125,7 @@ public class RecipeSearchServiceUTest {
         assertEquals(1, result.getTotalElements());
 
         verify(recipeRepository).findAll(pageable);
-        verify(recipeRepository, never()).findByTitleContainingIgnoreCaseOrDescriptionContainingIgnoreCase(anyString(), anyString(), any(Pageable.class));
+        verify(recipeRepository, never()).findByTitleContainingIgnoreCaseOrServingSuggestionsContainingIgnoreCase(anyString(), anyString(), any(Pageable.class));
     }
 
     @Test

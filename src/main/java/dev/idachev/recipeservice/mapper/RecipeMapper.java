@@ -16,6 +16,7 @@ import org.springframework.stereotype.Component;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.Arrays;
 
 /**
  * Mapper utility for recipe transformations.
@@ -54,7 +55,7 @@ public class RecipeMapper {
         return RecipeResponse.builder()
                 .id(recipe.getId())
                 .title(recipe.getTitle())
-                .description(recipe.getDescription())
+                .servingSuggestions(recipe.getServingSuggestions())
                 .instructions(recipe.getInstructions())
                 .imageUrl(recipe.getImageUrl())
                 .ingredients(ingredientsList)
@@ -85,7 +86,7 @@ public class RecipeMapper {
 
         Recipe recipe = new Recipe();
         recipe.setTitle(request.getTitle());
-        recipe.setDescription(request.getDescription());
+        recipe.setServingSuggestions(request.getServingSuggestions());
         recipe.setInstructions(request.getInstructions());
         recipe.setImageUrl(request.getImageUrl());
         recipe.setIngredients(serializeIngredients(request.getIngredients()));
@@ -115,7 +116,7 @@ public class RecipeMapper {
         }
 
         recipe.setTitle(request.getTitle());
-        recipe.setDescription(request.getDescription());
+        recipe.setServingSuggestions(request.getServingSuggestions());
         recipe.setInstructions(request.getInstructions());
 
         Optional.ofNullable(request.getImageUrl()).ifPresent(recipe::setImageUrl);
@@ -151,42 +152,39 @@ public class RecipeMapper {
     }
 
     /**
-     * Serializes a list of ingredients to a JSON string.
+     * Serializes a list of ingredients to a comma-separated string.
      */
     private String serializeIngredients(List<String> ingredients) {
         if (ingredients == null || ingredients.isEmpty()) {
-            return EMPTY_JSON_ARRAY;
+            return "";
         }
 
-        try {
-            if (objectMapper == null) {
-                log.error("ObjectMapper not initialized");
-                return EMPTY_JSON_ARRAY;
-            }
-            return objectMapper.writeValueAsString(ingredients);
-        } catch (JsonProcessingException e) {
-            log.error("Error serializing ingredients: {}", e.getMessage());
-            return EMPTY_JSON_ARRAY;
-        }
+        // Join ingredients with commas
+        return String.join(",", ingredients);
     }
 
     /**
-     * Parses a JSON string into a list of ingredients.
+     * Parses a comma-separated string into a list of ingredients.
      */
-    private List<String> parseIngredients(String ingredientsJson) {
-        if (ingredientsJson == null || ingredientsJson.isEmpty() || EMPTY_JSON_ARRAY.equals(ingredientsJson)) {
+    private List<String> parseIngredients(String ingredientsString) {
+        if (ingredientsString == null || ingredientsString.isEmpty()) {
             return Collections.emptyList();
         }
 
-        try {
-            if (objectMapper == null) {
-                log.error("ObjectMapper not initialized");
-                return Collections.emptyList();
+        // If it's a JSON array (for backward compatibility), try to parse it
+        if (ingredientsString.startsWith("[") && ingredientsString.endsWith("]")) {
+            try {
+                if (objectMapper == null) {
+                    log.error("ObjectMapper not initialized");
+                    return Collections.emptyList();
+                }
+                return objectMapper.readValue(ingredientsString, INGREDIENTS_TYPE);
+            } catch (Exception e) {
+                log.error("Error parsing ingredients JSON: {}", e.getMessage());
             }
-            return objectMapper.readValue(ingredientsJson, INGREDIENTS_TYPE);
-        } catch (Exception e) {
-            log.error("Error parsing ingredients JSON: {}", e.getMessage());
-            return Collections.emptyList();
         }
+        
+        // Split by comma
+        return Arrays.asList(ingredientsString.split(","));
     }
 }

@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import dev.idachev.recipeservice.exception.AIServiceException;
 import dev.idachev.recipeservice.infrastructure.storage.CloudinaryService;
 import dev.idachev.recipeservice.mapper.AIServiceMapper;
+import dev.idachev.recipeservice.web.dto.AIErrorResponse;
 import dev.idachev.recipeservice.web.dto.RecipeRequest;
 import dev.idachev.recipeservice.web.dto.SimplifiedRecipeResponse;
 import lombok.extern.slf4j.Slf4j;
@@ -80,7 +81,7 @@ public class AIService {
             if (imageGenerationEnabled && StringUtils.hasText(recipeRequest.getTitle())) {
                 // Try to generate image, but handle failure gracefully
                 try {
-                    imageUrl = generateRecipeImage(recipeRequest.getTitle(), recipeRequest.getDescription());
+                    imageUrl = generateRecipeImage(recipeRequest.getTitle(), recipeRequest.getServingSuggestions());
                 } catch (Exception e) {
                     log.warn("Failed to generate image for recipe {}: {}", recipeRequest.getTitle(), e.getMessage());
                     // Continue without image
@@ -137,12 +138,69 @@ public class AIService {
             throw new AIServiceException("AI returned empty response", null);
         }
 
+        // Clean up the content to handle markdown code blocks
+        content = cleanupJsonResponse(content);
+        
         try {
+            // First check if the response contains an error field (non-food items)
+            if (content.contains("\"error\"")) {
+                try {
+                    AIErrorResponse errorResponse = objectMapper.readValue(content, AIErrorResponse.class);
+                    String errorMsg = errorResponse.getError();
+                    if (errorResponse.getNonFoodItems() != null && !errorResponse.getNonFoodItems().isEmpty()) {
+                        errorMsg += ": " + String.join(", ", errorResponse.getNonFoodItems());
+                    }
+                    throw new AIServiceException(errorMsg, null);
+                } catch (Exception e) {
+                    if (e instanceof AIServiceException) throw e;
+                    // If parsing fails, continue with normal processing
+                }
+            }
+            
+            // Try to parse as a recipe
             return objectMapper.readValue(content, RecipeRequest.class);
+        } catch (AIServiceException e) {
+            throw e;
         } catch (Exception e) {
             log.error("Error parsing AI response: {}", e.getMessage());
             throw new AIServiceException("Failed to parse AI response", e);
         }
+    }
+
+    /**
+     * Cleans up JSON response from AI by removing any markdown formatting
+     * 
+     * @param content Raw content from AI
+     * @return Cleaned JSON string
+     */
+    private String cleanupJsonResponse(String content) {
+        if (content == null) {
+            return null;
+        }
+        
+        // Remove markdown code fences if present
+        String cleaned = content.trim();
+        
+        // Remove leading ```json or ``` and trailing ```
+        if (cleaned.startsWith("```json")) {
+            cleaned = cleaned.substring("```json".length());
+        } else if (cleaned.startsWith("```")) {
+            cleaned = cleaned.substring("```".length());
+        }
+        
+        if (cleaned.endsWith("```")) {
+            cleaned = cleaned.substring(0, cleaned.length() - "```".length());
+        }
+        
+        // Remove any leading/trailing whitespace that might appear after removing code fences
+        cleaned = cleaned.trim();
+        
+        // Log if cleanup was necessary
+        if (!cleaned.equals(content)) {
+            log.debug("Cleaned up markdown formatting from AI response");
+        }
+        
+        return cleaned;
     }
 
     /**
@@ -158,22 +216,24 @@ public class AIService {
      * Generate recipe image asynchronously
      */
     @Async
-    public CompletableFuture<String> generateRecipeImageAsync(String recipeTitle, String recipeDescription) {
-        return CompletableFuture.supplyAsync(() -> generateRecipeImage(recipeTitle, recipeDescription));
+    public CompletableFuture<String> generateRecipeImageAsync(String recipeTitle, String recipeServingSuggestions) {
+        return CompletableFuture.supplyAsync(() -> generateRecipeImage(recipeTitle, recipeServingSuggestions));
     }
 
     /**
      * Generate recipe image and store in Cloudinary
      * Designed to fail gracefully and return null rather than throw exceptions
      */
-    public String generateRecipeImage(String recipeTitle, String recipeDescription) {
+    public String generateRecipeImage(String recipeTitle, String recipeServingSuggestions) {
         if (!StringUtils.hasText(recipeTitle)) {
             log.warn("Recipe title empty, cannot generate image");
             return null;
         }
 
         try {
-            String promptText = RecipePrompts.getRecipeImagePrompt(recipeTitle, recipeDescription);
+            String promptText = RecipePrompts.getRecipeImagePrompt(recipeTitle, recipeServingSuggestions);
+            log.debug("Generating image for recipe: {}", recipeTitle);
+            
             String imageUrl = imageClient.call(new ImagePrompt(promptText))
                     .getResult().getOutput().getUrl();
 
@@ -182,6 +242,7 @@ public class AIService {
                 return null;
             }
 
+            log.debug("Image generated successfully, uploading to Cloudinary");
             return uploadToCloudinary(imageUrl, recipeTitle);
         } catch (Exception e) {
             log.error("Error generating recipe image: {}", e.getMessage());

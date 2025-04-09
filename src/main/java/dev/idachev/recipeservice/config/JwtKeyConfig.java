@@ -1,5 +1,6 @@
 package dev.idachev.recipeservice.config;
 
+import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
 import jakarta.annotation.PostConstruct;
 import lombok.Getter;
@@ -7,12 +8,11 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
-import java.nio.charset.StandardCharsets;
 import java.security.Key;
+import java.nio.charset.StandardCharsets;
 
 /**
  * Creates and manages the JWT signing key used for token validation.
- * This ensures compatibility with the auth-service JWT implementation.
  */
 @Component
 @Slf4j
@@ -27,20 +27,20 @@ public class JwtKeyConfig {
     @PostConstruct
     public void init() {
         try {
-            byte[] secretBytes = secret.getBytes(StandardCharsets.UTF_8);
-
-            // Ensure key is long enough for HS384 (needs at least 48 bytes)
-            if (secretBytes.length < 48) {
-                byte[] paddedKey = new byte[48];
-                System.arraycopy(secretBytes, 0, paddedKey, 0, secretBytes.length);
-                secretBytes = paddedKey;
+            byte[] keyBytes = secret.getBytes(StandardCharsets.UTF_8);
+            int keyBitSize = keyBytes.length * 8;
+            
+            // For HS384, need at least 384 bits
+            if (keyBitSize < 384) {
+                log.warn("JWT secret too small: {} bits < 384 bits - generating secure key", keyBitSize);
+                this.signingKey = Keys.secretKeyFor(SignatureAlgorithm.HS384);
+            } else {
+                this.signingKey = Keys.hmacShaKeyFor(keyBytes);
+                log.info("JWT key initialized: {} bits", keyBitSize);
             }
-
-            this.signingKey = Keys.hmacShaKeyFor(secretBytes);
-            log.info("JWT signing key initialized successfully");
         } catch (Exception e) {
-            log.error("Failed to initialize JWT signing key: {}", e.getMessage());
-            throw new RuntimeException("JWT signing key initialization failed", e);
+            log.error("JWT key init error: {}", e.getMessage());
+            this.signingKey = Keys.secretKeyFor(SignatureAlgorithm.HS384);
         }
     }
 } 

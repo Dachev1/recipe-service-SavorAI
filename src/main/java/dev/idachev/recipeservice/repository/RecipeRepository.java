@@ -16,6 +16,6 @@ public interface RecipeRepository extends JpaRepository<Recipe, UUID> {
 
     Page<Recipe> findByUserIdNot(UUID userId, Pageable pageable);
 
-    Page<Recipe> findByTitleContainingIgnoreCaseOrDescriptionContainingIgnoreCase(
-            String title, String description, Pageable pageable);
+    Page<Recipe> findByTitleContainingIgnoreCaseOrServingSuggestionsContainingIgnoreCase(
+            String title, String servingSuggestions, Pageable pageable);
 } 

@@ -61,7 +61,7 @@ public class RecipeSearchService {
         log.debug("Searching recipes with keyword: {}", keyword);
         String trimmedKeyword = keyword.trim();
 
-        Page<Recipe> recipePage = recipeRepository.findByTitleContainingIgnoreCaseOrDescriptionContainingIgnoreCase(
+        Page<Recipe> recipePage = recipeRepository.findByTitleContainingIgnoreCaseOrServingSuggestionsContainingIgnoreCase(
                 trimmedKeyword, trimmedKeyword, pageable);
 
         log.debug("Found {} recipes matching keyword: {}", recipePage.getTotalElements(), keyword);
