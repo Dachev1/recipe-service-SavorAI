@@ -68,7 +68,6 @@ class RecipeMapperUTest {
         Recipe recipe = Recipe.builder()
                 .id(recipeId)
                 .title("Test Recipe")
-                .description("Test Description")
                 .instructions("Test Instructions")
                 .imageUrl("http://example.com/image.jpg")
                 .ingredients(INGREDIENTS_JSON)
@@ -90,7 +89,6 @@ class RecipeMapperUTest {
         assertNotNull(response);
         assertEquals(recipeId, response.getId());
         assertEquals("Test Recipe", response.getTitle());
-        assertEquals("Test Description", response.getDescription());
         assertEquals("Test Instructions", response.getInstructions());
         assertEquals("http://example.com/image.jpg", response.getImageUrl());
         assertEquals(INGREDIENTS_LIST, response.getIngredients());

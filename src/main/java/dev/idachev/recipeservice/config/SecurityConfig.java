@@ -1,11 +1,14 @@
 package dev.idachev.recipeservice.config;
 
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
+import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -15,11 +18,13 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 import org.springframework.security.web.csrf.CsrfTokenRequestAttributeHandler;
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
+import org.springframework.security.web.util.matcher.OrRequestMatcher;
 import org.springframework.security.web.util.matcher.RequestMatcher;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
+import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.List;
@@ -31,7 +36,7 @@ import java.util.List;
 public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
-
+    
     @Value("${cors.allowed-origins}")
     private String allowedOrigins;
 
@@ -50,23 +55,24 @@ public class SecurityConfig {
     }
 
     private RequestMatcher apiMatcher() {
-        return new AntPathRequestMatcher("/api/**");
+        return new OrRequestMatcher(
+            new AntPathRequestMatcher("/api/**"),
+            new AntPathRequestMatcher("/v1/**")
+        );
     }
-
+    
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
-        log.info("Configuring CORS with origins: {}", allowedOrigins);
-
-        CorsConfiguration config = new CorsConfiguration();
-        config.setAllowedOrigins(Arrays.asList(allowedOrigins.split(",")));
-        config.setAllowedMethods(Arrays.asList(allowedMethods.split(",")));
-        config.setAllowedHeaders(Arrays.asList(allowedHeaders.split(",")));
-        config.setAllowCredentials(allowCredentials);
-        config.setMaxAge(3600L);
-        config.setExposedHeaders(List.of("Authorization", "Content-Type"));
-
+        CorsConfiguration configuration = new CorsConfiguration();
+        configuration.setAllowedOrigins(Arrays.asList(allowedOrigins.split(",")));
+        configuration.setAllowedMethods(Arrays.asList(allowedMethods.split(",")));
+        configuration.setAllowedHeaders(Arrays.asList(allowedHeaders.split(",")));
+        configuration.setAllowCredentials(allowCredentials);
+        configuration.setMaxAge(3600L);
+        
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-        source.registerCorsConfiguration("/**", config);
+        source.registerCorsConfiguration("/**", configuration);
+        log.info("CORS configuration initialized with allowed origins: {}", allowedOrigins);
         return source;
     }
 
@@ -75,82 +81,78 @@ public class SecurityConfig {
         log.info("Configuring security filter chain");
 
         http
+                // Enable CORS and disable CSRF for API requests
+                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .csrf(csrf -> csrf
                         .ignoringRequestMatchers(apiMatcher())
                         .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
                         .csrfTokenRequestHandler(new CsrfTokenRequestAttributeHandler()))
-                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+                
+                // Configure authorization rules
                 .authorizeHttpRequests(authorize -> authorize
+                        // Always permit OPTIONS requests for CORS preflight
+                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+                        
+                        // Allow public endpoints
                         .requestMatchers("/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
                         .requestMatchers("/actuator/**").permitAll()
                         .requestMatchers("/error/**", "/static/**", "/css/**", "/js/**").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/v1/recipes/auth-test").permitAll()
-                        .requestMatchers(HttpMethod.POST, "/api/v1/recipes/generate").hasAnyRole("USER", "ADMIN")
-                        .requestMatchers(HttpMethod.POST, "/api/v1/recipes/generate-meal").hasAnyRole("USER", "ADMIN")
-                        .requestMatchers(HttpMethod.POST, "/api/v1/recipes/generate-meal-plan").hasAnyRole("USER", "ADMIN")
-                        .requestMatchers(HttpMethod.POST, "/api/v1/recipes/generate-recipe").hasAnyRole("USER", "ADMIN")
-                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/v1/recipes/auth-test", "/v1/recipes/auth-test").permitAll()
+                        
+                        // Secured endpoints
+                        .requestMatchers(HttpMethod.POST, 
+                            "/api/v1/recipes/generate", "/v1/recipes/generate",
+                            "/api/v1/recipes/generate-meal", "/v1/recipes/generate-meal",
+                            "/api/v1/recipes/generate-meal-plan", "/v1/recipes/generate-meal-plan",
+                            "/api/v1/recipes/generate-recipe", "/v1/recipes/generate-recipe")
+                        .hasAnyRole("USER", "ADMIN")
+                        
+                        // All other requests need authentication
                         .anyRequest().authenticated()
                 )
+                
+                // Configure stateless session management
                 .sessionManagement(session -> session
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-
+                
+                // Configure exception handling
                 .exceptionHandling(ex -> ex
-                        // Handle access denied (403) errors
-                        .accessDeniedHandler((
-                                request,
-                                response,
-                                accessDeniedException) -> {
-
-                            log.warn("Access denied for request to {}: {}",
-                                    request.getRequestURI(), accessDeniedException.getMessage());
-
-                            if (apiMatcher().matches(request)) {
-                                response.setStatus(403);
-                                response.setContentType(MediaType.APPLICATION_JSON_VALUE);
-
-                                String jsonResponse = String.format(
-                                        "{\"timestamp\":\"%s\",\"status\":%d,\"error\":\"Forbidden\",\"message\":\"Access denied: %s\",\"path\":\"%s\"}",
-                                        LocalDateTime.now(),
-                                        403,
-                                        "You don't have permission to access this resource",
-                                        request.getRequestURI()
-                                );
-
-                                response.getWriter().write(jsonResponse);
-                            } else {
-
-                                response.sendError(403, "Access Denied");
+                        .accessDeniedHandler((request, response, exception) -> sendErrorResponse(
+                                request, response, 403, "Forbidden", 
+                                "You don't have permission to access this resource"))
+                        .authenticationEntryPoint((request, response, authException) -> {
+                            // Skip auth errors for OPTIONS requests
+                            if (request.getMethod().equals("OPTIONS")) {
+                                response.setStatus(HttpServletResponse.SC_OK);
+                                return;
                             }
-                        })
-                        .authenticationEntryPoint((
-                                request,
-                                response,
-                                authException) -> {
-                            log.warn("Unauthorized request to path: {}, error: {}",
-                                    request.getRequestURI(), authException.getMessage());
-
-                            if (apiMatcher().matches(request)) {
-                                response.setStatus(401);
-                                response.setContentType(MediaType.APPLICATION_JSON_VALUE);
-
-                                String jsonResponse = String.format(
-                                        "{\"timestamp\":\"%s\",\"status\":%d,\"error\":\"Unauthorized\",\"message\":\"%s\",\"path\":\"%s\"}",
-                                        LocalDateTime.now(),
-                                        401,
-                                        "Authentication required",
-                                        request.getRequestURI()
-                                );
-
-                                response.getWriter().write(jsonResponse);
-                            } else {
-                                response.sendError(401, "Authentication required");
-                            }
+                            sendErrorResponse(request, response, 401, "Unauthorized", 
+                                "Authentication required");
                         })
                 )
-
+                
+                // Add JWT filter
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
+    }
+    
+    private void sendErrorResponse(HttpServletRequest request, HttpServletResponse response, 
+                                 int status, String error, String message) throws IOException {
+        log.warn("{} for request to {}: {}", error, request.getRequestURI(), message);
+        
+        if (apiMatcher().matches(request)) {
+            response.setStatus(status);
+            response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+            
+            String jsonResponse = String.format(
+                    "{\"timestamp\":\"%s\",\"status\":%d,\"error\":\"%s\",\"message\":\"%s\",\"path\":\"%s\"}",
+                    LocalDateTime.now(), status, error, message, request.getRequestURI()
+            );
+            
+            response.getWriter().write(jsonResponse);
+        } else {
+            response.sendError(status, message);
+        }
     }
 } 

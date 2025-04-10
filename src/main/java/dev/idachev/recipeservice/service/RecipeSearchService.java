@@ -18,6 +18,8 @@ import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+import dev.idachev.recipeservice.user.service.UserService;
+
 /**
  * Service for recipe search operations.
  * Responsible for all search-related functionality.
@@ -30,16 +32,19 @@ public class RecipeSearchService {
     private final FavoriteRecipeRepository favoriteRecipeRepository;
     private final RecipeMapper recipeMapper;
     private final CommentService commentService;
+    private final UserService userService;
 
     @Autowired
     public RecipeSearchService(RecipeRepository recipeRepository,
                                FavoriteRecipeRepository favoriteRecipeRepository,
                                RecipeMapper recipeMapper,
-                               CommentService commentService) {
+                               CommentService commentService,
+                               UserService userService) {
         this.recipeRepository = recipeRepository;
         this.favoriteRecipeRepository = favoriteRecipeRepository;
         this.recipeMapper = recipeMapper;
         this.commentService = commentService;
+        this.userService = userService;
     }
 
     /**
@@ -116,8 +121,16 @@ public class RecipeSearchService {
     private Page<RecipeResponse> mapAndEnhancePage(Page<Recipe> recipePage, Pageable pageable, UUID userId) {
         List<RecipeResponse> responses = recipePage.getContent().stream()
                 .map(recipe -> {
+                    // Create the base response
                     RecipeResponse response = recipeMapper.toResponse(recipe);
-                    return enhanceWithFavoriteInfo(response, userId);
+                    
+                    // Handle favorite info
+                    enhanceWithFavoriteInfo(response, userId);
+                    
+                    // Add author information
+                    enhanceWithAuthorInfo(response);
+                    
+                    return response;
                 })
                 .collect(Collectors.toList());
 
@@ -155,6 +168,38 @@ public class RecipeSearchService {
         }
 
         return response;
+    }
+
+    /**
+     * Enhances a recipe response with author information.
+     */
+    private void enhanceWithAuthorInfo(RecipeResponse response) {
+        if (response == null || response.getCreatedById() == null) {
+            return;
+        }
+        
+        try {
+            // Get author information from user service
+            String authorName = userService.getUsernameById(response.getCreatedById());
+            log.info("Setting author name '{}' for recipe {}", authorName, response.getId());
+            
+            // If we get back Unknown User, use a better default
+            if (authorName == null || "Unknown User".equals(authorName)) {
+                log.warn("User service returned 'Unknown User' for ID {}, using better fallback", response.getCreatedById());
+                authorName = "Chef"; 
+            }
+            
+            // Set both fields to ensure consistency
+            response.setAuthorName(authorName);
+            response.setUsername(authorName);
+            
+            log.debug("Recipe {} author fields: authorName='{}', username='{}'", 
+                response.getId(), response.getAuthorName(), response.getUsername());
+        } catch (Exception e) {
+            log.error("Failed to get author name for recipe {}: {}", response.getId(), e.getMessage());
+            response.setAuthorName("Chef");
+            response.setUsername("Chef");
+        }
     }
 
     /**

@@ -4,7 +4,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import dev.idachev.recipeservice.exception.AIServiceException;
 import dev.idachev.recipeservice.infrastructure.storage.CloudinaryService;
 import dev.idachev.recipeservice.mapper.AIServiceMapper;
+import dev.idachev.recipeservice.model.DifficultyLevel;
 import dev.idachev.recipeservice.web.dto.AIErrorResponse;
+import dev.idachev.recipeservice.web.dto.MacrosDto;
 import dev.idachev.recipeservice.web.dto.RecipeRequest;
 import dev.idachev.recipeservice.web.dto.SimplifiedRecipeResponse;
 import lombok.extern.slf4j.Slf4j;
@@ -158,7 +160,12 @@ public class AIService {
             }
             
             // Try to parse as a recipe
-            return objectMapper.readValue(content, RecipeRequest.class);
+            RecipeRequest recipeRequest = objectMapper.readValue(content, RecipeRequest.class);
+            
+            // Normalize and validate required fields are present with reasonable values
+            normalizeRecipeFields(recipeRequest);
+            
+            return recipeRequest;
         } catch (AIServiceException e) {
             throw e;
         } catch (Exception e) {
@@ -209,7 +216,15 @@ public class AIService {
     private String createUniquePrompt(List<String> ingredients) {
         String uniqueId = UUID.randomUUID().toString().substring(0, UUID_LENGTH);
         String joinedIngredients = CollectionUtils.isEmpty(ingredients) ? "" : String.join(", ", ingredients);
-        return RecipePrompts.getUniqueRecipePrompt(joinedIngredients, uniqueId);
+        return String.format(
+                "I need a creative and unique recipe using these ingredients: %s. " +
+                "Only reject obviously non-food items like cars, electronics, etc. " +
+                "Accept all normal food ingredients. " +
+                "Be creative with cuisine style and cooking method. " +
+                "IMPORTANT: You must include difficulty level (EASY, MEDIUM, or HARD) and totalTimeMinutes (total cooking time). " +
+                "Make it unique with ID: %s",
+                joinedIngredients, uniqueId
+        );
     }
 
     /**
@@ -266,6 +281,62 @@ public class AIService {
             log.error("Error uploading to Cloudinary for recipe {}: {}", recipeTitle, e.getMessage());
             // Fallback to original URL instead of returning null
             return imageUrl;
+        }
+    }
+
+    /**
+     * Ensures all required fields in the recipe have valid values, providing defaults when necessary.
+     * Particularly focuses on difficulty level and totalTimeMinutes which are critical for the UI.
+     * 
+     * @param recipe The recipe request object to normalize
+     */
+    private void normalizeRecipeFields(RecipeRequest recipe) {
+        // Ensure difficulty level is set
+        if (recipe.getDifficulty() == null) {
+            log.debug("Recipe missing difficulty level, setting default MEDIUM");
+            recipe.setDifficulty(DifficultyLevel.MEDIUM);
+        }
+        
+        // Ensure totalTimeMinutes is set with a reasonable value based on recipe complexity
+        if (recipe.getTotalTimeMinutes() == null || recipe.getTotalTimeMinutes() <= 0) {
+            int defaultTime;
+            
+            // Base default time on recipe complexity (ingredients count, difficulty)
+            if (recipe.getIngredients() != null) {
+                int ingredientCount = recipe.getIngredients().size();
+                
+                if (DifficultyLevel.EASY.equals(recipe.getDifficulty())) {
+                    defaultTime = Math.max(15, ingredientCount * 2);
+                } else if (DifficultyLevel.HARD.equals(recipe.getDifficulty())) {
+                    defaultTime = Math.max(45, ingredientCount * 5);
+                } else {
+                    // MEDIUM difficulty
+                    defaultTime = Math.max(30, ingredientCount * 3);
+                }
+            } else {
+                // If no ingredients, use fixed defaults based on difficulty
+                if (DifficultyLevel.EASY.equals(recipe.getDifficulty())) {
+                    defaultTime = 20;
+                } else if (DifficultyLevel.HARD.equals(recipe.getDifficulty())) {
+                    defaultTime = 60;
+                } else {
+                    defaultTime = 40;
+                }
+            }
+            
+            log.debug("Recipe missing totalTimeMinutes, setting default {} based on difficulty and ingredients", defaultTime);
+            recipe.setTotalTimeMinutes(defaultTime);
+        }
+        
+        // Ensure macros object exists
+        if (recipe.getMacros() == null) {
+            MacrosDto macros = new MacrosDto();
+            macros.setCalories(0);
+            macros.setProteinGrams(0.0);
+            macros.setCarbsGrams(0.0);
+            macros.setFatGrams(0.0);
+            recipe.setMacros(macros);
+            log.debug("Recipe missing macros, initializing empty macros object");
         }
     }
 } 

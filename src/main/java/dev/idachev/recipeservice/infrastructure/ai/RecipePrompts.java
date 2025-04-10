@@ -32,7 +32,7 @@ public final class RecipePrompts {
                     "servingSuggestions": "Serving details, garnishes, and pairings",
                     "ingredients": ["Ingredient 1 with quantity", "Ingredient 2 with quantity", ...],
                     "instructions": "Detailed, step-by-step cooking instructions with numbered steps",
-                    "totalTimeMinutes": number (prep + cooking time),
+                    "totalTimeMinutes": number (prep + cooking time), 
                     "macros": {
                         "calories": number,
                         "proteinGrams": number,
@@ -41,6 +41,10 @@ public final class RecipePrompts {
                     },
                     "difficulty": "EASY", "MEDIUM", or "HARD"
                 }
+                
+                REQUIRED FIELDS: You MUST include "difficulty" and "totalTimeMinutes" in your response. These fields are essential and should be calculated based on:
+                - difficulty: Consider complexity of techniques, number of steps, and skill level required
+                - totalTimeMinutes: Calculate the total time including prep and cooking (between 15-120 minutes)
                 
                 IMPORTANT GUIDELINES:
                 1. Make the dish realistic and achievable for a home cook

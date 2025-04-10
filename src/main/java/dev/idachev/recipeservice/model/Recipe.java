@@ -59,4 +59,12 @@ public class Recipe {
     @Column
     @Builder.Default
     private Boolean isAiGenerated = false;
+    
+    @Column
+    @Builder.Default
+    private Integer upvotes = 0;
+    
+    @Column
+    @Builder.Default
+    private Integer downvotes = 0;
 } 

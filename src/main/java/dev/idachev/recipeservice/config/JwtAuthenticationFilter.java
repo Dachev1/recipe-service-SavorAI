@@ -33,7 +33,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private final AntPathMatcher pathMatcher;
     private final ConcurrentHashMap<String, Long> tokenBlacklist;
     private final List<String> publicPaths = List.of(
-            "/api-docs/**", "/swagger-ui/**", "/actuator/**", "/error/**");
+            "/api-docs/**", "/swagger-ui/**", "/actuator/**", "/error/**",
+            "/api/v1/recipes/auth-test", "/v1/recipes/auth-test");
 
     public JwtAuthenticationFilter(JwtUtil jwtUtil, AntPathMatcher pathMatcher,
                                    ConcurrentHashMap<String, Long> tokenBlacklist) {
@@ -97,25 +98,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             return "";
         }
         
-        // Extract token and clean it
-        String token = bearerToken.substring(7).trim();
-        
-        // Remove any trailing dots that might cause parsing issues
-        while (token.endsWith(".")) {
-            token = token.substring(0, token.length() - 1);
-        }
-        
-        // Additional validation to make sure we have a proper JWT with 3 parts
-        if (!token.isEmpty() && token.split("\\.").length != 3) {
-            log.debug("Malformed JWT token structure");
-            return "";
-        }
-        
-        return token;
+        return bearerToken.substring(7).trim();
     }
 
     private boolean isTokenBlacklisted(String token) {
-        // Periodic cleanup of expired tokens (only if token is provided to minimize unnecessary operations)
         if (!token.isEmpty()) {
             long currentTime = System.currentTimeMillis();
             tokenBlacklist.entrySet().removeIf(entry -> entry.getValue() < currentTime);

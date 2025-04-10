@@ -7,20 +7,25 @@ import dev.idachev.recipeservice.infrastructure.ai.AIService;
 import dev.idachev.recipeservice.mapper.RecipeMapper;
 import dev.idachev.recipeservice.model.FavoriteRecipe;
 import dev.idachev.recipeservice.model.Recipe;
+import dev.idachev.recipeservice.model.RecipeVote;
 import dev.idachev.recipeservice.repository.FavoriteRecipeRepository;
 import dev.idachev.recipeservice.repository.RecipeRepository;
+import dev.idachev.recipeservice.user.service.UserService;
 import dev.idachev.recipeservice.web.dto.RecipeRequest;
 import dev.idachev.recipeservice.web.dto.RecipeResponse;
 import dev.idachev.recipeservice.web.dto.SimplifiedRecipeResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDateTime;
+import java.util.Comparator;
 import java.util.List;
 import java.util.UUID;
 
@@ -39,6 +44,8 @@ public class RecipeService {
     private final AIService aiService;
     private final RecipeMapper recipeMapper;
     private final CommentService commentService;
+    private final VoteService voteService;
+    private final UserService userService;
 
     @Autowired
     public RecipeService(RecipeRepository recipeRepository,
@@ -47,7 +54,9 @@ public class RecipeService {
                          RecipeSearchService recipeSearchService,
                          AIService aiService,
                          RecipeMapper recipeMapper,
-                         CommentService commentService) {
+                         CommentService commentService,
+                         VoteService voteService,
+                         UserService userService) {
         this.recipeRepository = recipeRepository;
         this.favoriteRecipeRepository = favoriteRecipeRepository;
         this.recipeImageService = recipeImageService;
@@ -55,6 +64,8 @@ public class RecipeService {
         this.aiService = aiService;
         this.recipeMapper = recipeMapper;
         this.commentService = commentService;
+        this.voteService = voteService;
+        this.userService = userService;
     }
 
     /**
@@ -72,7 +83,7 @@ public class RecipeService {
         Recipe savedRecipe = recipeRepository.save(recipe);
         log.info("Created recipe with ID: {}", savedRecipe.getId());
 
-        return enhanceWithFavoriteInfo(recipeMapper.toResponse(savedRecipe), userId);
+        return enhanceWithUserInteractions(recipeMapper.toResponse(savedRecipe), userId);
     }
 
     /**
@@ -105,7 +116,7 @@ public class RecipeService {
     @Transactional(readOnly = true)
     public RecipeResponse getRecipeById(UUID id, UUID userId) {
         Recipe recipe = findRecipeByIdOrThrow(id);
-        return enhanceWithFavoriteInfo(recipeMapper.toResponse(recipe), userId);
+        return enhanceWithUserInteractions(recipeMapper.toResponse(recipe), userId);
     }
 
     /**
@@ -137,8 +148,27 @@ public class RecipeService {
     public List<RecipeResponse> getRecipesByUserId(UUID userId) {
         return recipeRepository.findByUserId(userId).stream()
                 .map(recipeMapper::toResponse)
-                .map(response -> enhanceWithFavoriteInfo(response, userId))
+                .map(response -> enhanceWithUserInteractions(response, userId))
                 .toList();
+    }
+
+    /**
+     * Get recipe feed sorted by newest first with pagination.
+     */
+    @Transactional(readOnly = true)
+    public Page<RecipeResponse> getRecipeFeed(UUID userId, Pageable pageable) {
+        // Get paginated recipes sorted by creation date (newest first)
+        Page<Recipe> recipePage = recipeRepository.findAll(
+            PageRequest.of(
+                pageable.getPageNumber(),
+                pageable.getPageSize(),
+                Sort.Direction.DESC,
+                "createdAt"
+            )
+        );
+
+        // Map to response DTOs with user interactions
+        return recipePage.map(recipe -> enhanceWithUserInteractions(recipeMapper.toResponse(recipe), userId));
     }
 
     /**
@@ -154,7 +184,42 @@ public class RecipeService {
         Recipe updatedRecipe = recipeRepository.save(recipe);
         log.info("Updated recipe with ID: {}", updatedRecipe.getId());
 
-        return enhanceWithFavoriteInfo(recipeMapper.toResponse(updatedRecipe), userId);
+        return enhanceWithUserInteractions(recipeMapper.toResponse(updatedRecipe), userId);
+    }
+
+    /**
+     * Update an existing recipe with optional image upload.
+     */
+    @Transactional
+    public RecipeResponse updateRecipe(UUID id, RecipeRequest request, MultipartFile image, UUID userId) {
+        Recipe recipe = checkRecipePermission(id, userId);
+        
+        log.info("Updating recipe {} with image upload. Image present: {}", id, image != null && !image.isEmpty());
+
+        // Process image if provided and set the new URL
+        if (image != null && !image.isEmpty()) {
+            log.info("Processing new image for recipe {}", id);
+            String oldImageUrl = recipe.getImageUrl();
+            
+            // Process the new image
+            processImageIfPresent(request, image);
+            
+            // Log the image URL change 
+            if (oldImageUrl != null && !oldImageUrl.equals(request.getImageUrl())) {
+                log.info("Image URL changed from '{}' to '{}'", oldImageUrl, request.getImageUrl());
+            }
+        } else {
+            log.info("No new image provided for recipe {}", id);
+        }
+
+        // Update entity fields from the request
+        recipeMapper.updateEntityFromRequest(recipe, request);
+        recipe.setUpdatedAt(LocalDateTime.now());
+
+        Recipe updatedRecipe = recipeRepository.save(recipe);
+        log.info("Updated recipe with ID: {} and image", updatedRecipe.getId());
+
+        return enhanceWithUserInteractions(recipeMapper.toResponse(updatedRecipe), userId);
     }
 
     /**
@@ -216,25 +281,92 @@ public class RecipeService {
     }
 
     /**
-     * Enhance a recipe response with favorite information.
+     * Enhance a recipe response with user interaction information.
+     * Public to allow other services to access the complete enhancement logic.
      */
-    private RecipeResponse enhanceWithFavoriteInfo(RecipeResponse response, UUID userId) {
+    public RecipeResponse enhanceWithUserInteractions(RecipeResponse response, UUID userId) {
         if (response == null) {
+            log.debug("enhanceWithUserInteractions: response is null");
             return null;
         }
 
-        // Check if this recipe is in the user's favorites
-        boolean isFavorite = favoriteRecipeRepository.existsByUserIdAndRecipeId(userId, response.getId());
-        response.setIsFavorite(isFavorite);
-
-        // Get the favorite count for this recipe
-        long favoriteCount = favoriteRecipeRepository.countByRecipeId(response.getId());
-        response.setFavoriteCount(favoriteCount);
-        
-        // Get the comment count for this recipe
-        long commentCount = commentService.getCommentCount(response.getId());
-        response.setCommentCount(commentCount);
+        try {
+            // Check if this recipe is in the user's favorites
+            boolean isFavorite = favoriteRecipeRepository.existsByUserIdAndRecipeId(userId, response.getId());
+            response.setIsFavorite(isFavorite);
+    
+            // Get the favorite count for this recipe
+            long favoriteCount = favoriteRecipeRepository.countByRecipeId(response.getId());
+            response.setFavoriteCount(favoriteCount);
+            
+            // Get the comment count for this recipe
+            long commentCount = commentService.getCommentCount(response.getId());
+            response.setCommentCount(commentCount);
+            
+            // Get vote information
+            response.setUpvotes(response.getUpvotes() != null ? response.getUpvotes() : 0);
+            response.setDownvotes(response.getDownvotes() != null ? response.getDownvotes() : 0);
+            
+            // Get user's vote on this recipe
+            RecipeVote.VoteType userVote = voteService.getUserVote(response.getId(), userId);
+            if (userVote != null) {
+                response.setUserVote(userVote.toString());
+            }
+    
+            // Add author information
+            log.info("Enhancing recipe {} with author information. CreatedById: {}", 
+                    response.getId(), response.getCreatedById());
+            
+            if (response.getCreatedById() != null) {
+                try {
+                    // Get author information from user service
+                    String authorName = userService.getUsernameById(response.getCreatedById());
+                    log.info("Setting author name '{}' for recipe {}", authorName, response.getId());
+                    
+                    // If we get back Unknown User, use a better default
+                    if (authorName == null || "Unknown User".equals(authorName)) {
+                        log.warn("User service returned 'Unknown User' for ID {}, using better fallback", response.getCreatedById());
+                        authorName = "Chef"; 
+                    }
+                    
+                    // EXPLICITLY set both authorName and username fields with the same value
+                    response.setAuthorName(authorName);
+                    response.setUsername(authorName);
+                    
+                    // Verify fields are set correctly in the log
+                    log.info("AUTHOR DEBUG - Recipe {} author fields after setting: authorName='{}', username='{}'", 
+                        response.getId(), response.getAuthorName(), response.getUsername());
+                } catch (Exception e) {
+                    log.error("Failed to get author name for recipe {}: {}", response.getId(), e.getMessage(), e);
+                    // Set a default value if author name lookup fails
+                    response.setAuthorName("Chef");
+                    response.setUsername("Chef");
+                    
+                    log.info("AUTHOR DEBUG - Recipe {} using fallback author: authorName='{}', username='{}'", 
+                        response.getId(), response.getAuthorName(), response.getUsername());
+                }
+            } else {
+                log.warn("Recipe {} has no author ID", response.getId());
+                response.setAuthorName("Unknown Chef");
+                response.setUsername("Unknown Chef");
+                
+                log.info("AUTHOR DEBUG - Recipe {} has no author ID, using: authorName='{}', username='{}'", 
+                    response.getId(), response.getAuthorName(), response.getUsername());
+            }
+        } catch (Exception e) {
+            log.error("Error enhancing recipe with user interactions: {}", e.getMessage(), e);
+        }
 
         return response;
+    }
+    
+    /**
+     * Convert Recipe entity to RecipeResponse DTO for use with the VoteService.
+     */
+    public RecipeResponse toResponse(Recipe recipe, UUID userId) {
+        if (recipe == null) {
+            return null;
+        }
+        return enhanceWithUserInteractions(recipeMapper.toResponse(recipe), userId);
     }
 } 

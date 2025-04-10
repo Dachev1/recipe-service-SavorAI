@@ -30,6 +30,42 @@ public class UserService {
     }
 
     /**
+     * Get a username by user ID
+     * 
+     * @param userId The ID of the user
+     * @return The username of the user
+     */
+    public String getUsernameById(UUID userId) {
+        if (userId == null) {
+            log.warn("getUsernameById called with null userId");
+            throw new IllegalArgumentException("User ID cannot be null");
+        }
+        
+        log.info("Attempting to get username for user ID: {}", userId);
+        try {
+            log.debug("Making API call to user service for user ID: {}", userId);
+            ResponseEntity<UserDTO> response = userClient.getUserById(userId);
+            
+            if (response == null) {
+                log.warn("User service returned null response for user ID: {}", userId);
+                return "Unknown User";
+            }
+            
+            if (response.getBody() == null) {
+                log.warn("User service returned null body for user ID: {}", userId);
+                return "Unknown User";
+            }
+            
+            String username = response.getBody().getUsername();
+            log.info("Successfully retrieved username '{}' for user ID: {}", username, userId);
+            return username;
+        } catch (Exception e) {
+            log.error("Error retrieving username for user ID {}: {}", userId, e.getMessage(), e);
+            return "Unknown User";
+        }
+    }
+
+    /**
      * Get current user information based on the JWT token.
      *
      * @param token JWT token for authentication

@@ -68,6 +68,8 @@ public class RecipeMapper {
                 .isAiGenerated(recipe.getIsAiGenerated())
                 .isFavorite(false) // Default value, will be set by service
                 .favoriteCount(0L) // Default value, will be set by service
+                .authorName(null) // Will be set by enhanceWithUserInteractions
+                .username(null) // Will be set by enhanceWithUserInteractions
                 .build();
     }
 
