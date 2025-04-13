@@ -42,29 +42,47 @@ public class VoteService {
      */
     @Transactional
     public Recipe vote(UUID recipeId, RecipeVote.VoteType voteType, UUID userId) {
+        log.debug("Vote request: recipeId={}, voteType={}, userId={}", recipeId, voteType, userId);
+        
         // Get the recipe
         Recipe recipe = recipeRepository.findById(recipeId)
                 .orElseThrow(() -> new ResourceNotFoundException("Recipe not found with id: " + recipeId));
+        
+        // Initialize upvotes/downvotes with default values if null
+        int upvotes = recipe.getUpvotes() != null ? recipe.getUpvotes() : 0;
+        int downvotes = recipe.getDownvotes() != null ? recipe.getDownvotes() : 0;
+        
+        log.debug("Found recipe: id={}, title={}, currentUpvotes={}, currentDownvotes={}", 
+                recipe.getId(), recipe.getTitle(), upvotes, downvotes);
 
         // Check if user is trying to vote on their own recipe
         if (recipe.getUserId().equals(userId)) {
+            log.warn("User {} attempted to vote on their own recipe {}", userId, recipeId);
             throw new UnauthorizedAccessException("You cannot vote on your own recipe");
         }
 
+        // Set initial vote counts
+        recipe.setUpvotes(upvotes);
+        recipe.setDownvotes(downvotes);
+
         // Check if user has already voted
         Optional<RecipeVote> existingVote = voteRepository.findByUserIdAndRecipeId(userId, recipeId);
+        log.debug("Existing vote found: {}", existingVote.isPresent());
 
         if (existingVote.isPresent()) {
             RecipeVote vote = existingVote.get();
             RecipeVote.VoteType oldVoteType = vote.getVoteType();
+            log.debug("Existing vote type: {}, new vote type: {}", oldVoteType, voteType);
 
             // If the user is changing their vote
             if (oldVoteType != voteType) {
-                // Update vote counts
+                log.debug("Changing vote from {} to {}", oldVoteType, voteType);
+                
+                // Update vote counts (remove old vote, add new vote)
                 if (oldVoteType == RecipeVote.VoteType.UPVOTE) {
-                    recipe.setUpvotes(recipe.getUpvotes() - 1);
+                    recipe.setUpvotes(Math.max(0, upvotes - 1));
                 } else {
-                    recipe.setDownvotes(recipe.getDownvotes() - 1);
+                    recipe.setDownvotes(Math.max(0, downvotes - 1));
                 }
 
                 if (voteType == RecipeVote.VoteType.UPVOTE) {
@@ -76,19 +94,23 @@ public class VoteService {
                 // Update vote
                 vote.setVoteType(voteType);
                 voteRepository.save(vote);
+                log.debug("Vote updated: id={}, type={}", vote.getId(), vote.getVoteType());
             } else {
-                // User is unvoting
+                // User is unvoting (toggling off)
+                log.debug("User is removing their {} vote", voteType);
                 if (voteType == RecipeVote.VoteType.UPVOTE) {
-                    recipe.setUpvotes(recipe.getUpvotes() - 1);
+                    recipe.setUpvotes(Math.max(0, upvotes - 1));
                 } else {
-                    recipe.setDownvotes(recipe.getDownvotes() - 1);
+                    recipe.setDownvotes(Math.max(0, downvotes - 1));
                 }
                 
                 // Remove vote
                 voteRepository.delete(vote);
+                log.debug("Vote deleted");
             }
         } else {
             // New vote
+            log.debug("Creating new {} vote", voteType);
             RecipeVote vote = RecipeVote.builder()
                     .userId(userId)
                     .recipeId(recipeId)
@@ -97,16 +119,20 @@ public class VoteService {
             
             // Update vote counts
             if (voteType == RecipeVote.VoteType.UPVOTE) {
-                recipe.setUpvotes(recipe.getUpvotes() + 1);
+                recipe.setUpvotes(upvotes + 1);
             } else {
-                recipe.setDownvotes(recipe.getDownvotes() + 1);
+                recipe.setDownvotes(downvotes + 1);
             }
             
             voteRepository.save(vote);
+            log.debug("New vote saved: id={}", vote.getId());
         }
 
         // Save and return updated recipe
-        return recipeRepository.save(recipe);
+        Recipe updatedRecipe = recipeRepository.save(recipe);
+        log.debug("Recipe updated: id={}, newUpvotes={}, newDownvotes={}", 
+                updatedRecipe.getId(), updatedRecipe.getUpvotes(), updatedRecipe.getDownvotes());
+        return updatedRecipe;
     }
 
     /**

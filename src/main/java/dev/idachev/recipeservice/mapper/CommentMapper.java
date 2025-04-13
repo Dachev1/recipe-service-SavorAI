@@ -1,9 +1,12 @@
 package dev.idachev.recipeservice.mapper;
 
 import dev.idachev.recipeservice.model.Comment;
+import dev.idachev.recipeservice.model.Recipe;
+import dev.idachev.recipeservice.repository.RecipeRepository;
 import dev.idachev.recipeservice.web.dto.CommentRequest;
 import dev.idachev.recipeservice.web.dto.CommentResponse;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.util.UUID;
@@ -14,6 +17,13 @@ import java.util.UUID;
 @Component
 @Slf4j
 public class CommentMapper {
+
+    private final RecipeRepository recipeRepository;
+
+    @Autowired
+    public CommentMapper(RecipeRepository recipeRepository) {
+        this.recipeRepository = recipeRepository;
+    }
 
     /**
      * Converts a Comment entity to a CommentResponse DTO.
@@ -27,6 +37,15 @@ public class CommentMapper {
             throw new IllegalArgumentException("Cannot convert null comment to CommentResponse");
         }
 
+        // Determine if current user is the recipe owner
+        boolean isRecipeOwner = false;
+        if (currentUserId != null) {
+            Recipe recipe = recipeRepository.findById(comment.getRecipeId()).orElse(null);
+            if (recipe != null) {
+                isRecipeOwner = recipe.getUserId().equals(currentUserId);
+            }
+        }
+
         return CommentResponse.builder()
                 .id(comment.getId())
                 .content(comment.getContent())
@@ -36,6 +55,7 @@ public class CommentMapper {
                 .createdAt(comment.getCreatedAt())
                 .updatedAt(comment.getUpdatedAt())
                 .isOwner(currentUserId != null && currentUserId.equals(comment.getUserId()))
+                .isRecipeOwner(isRecipeOwner)
                 .build();
     }
 

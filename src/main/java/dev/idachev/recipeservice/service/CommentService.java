@@ -109,6 +109,11 @@ public class CommentService {
         Recipe recipe = recipeRepository.findById(recipeId)
                 .orElseThrow(() -> new ResourceNotFoundException("Recipe not found with id: " + recipeId));
 
+        // Check if user is trying to comment on their own recipe
+        if (recipe.getUserId().equals(userId)) {
+            throw new UnauthorizedAccessException("You cannot comment on your own recipe");
+        }
+
         Comment comment = commentMapper.toEntity(request, userId, username, recipeId);
         Comment savedComment = commentRepository.save(comment);
         log.info("Created comment with ID: {} for recipe ID: {}", savedComment.getId(), recipeId);
@@ -162,13 +167,21 @@ public class CommentService {
         Comment comment = commentRepository.findById(commentId)
                 .orElseThrow(() -> new ResourceNotFoundException("Comment not found with id: " + commentId));
 
-        // Check if the user is the owner of the comment
-        if (!comment.getUserId().equals(userId)) {
+        // Get the recipe to check if the user is the recipe owner
+        Recipe recipe = recipeRepository.findById(comment.getRecipeId())
+                .orElseThrow(() -> new ResourceNotFoundException("Recipe not found with id: " + comment.getRecipeId()));
+
+        // Check if the user is either the owner of the comment or the owner of the recipe
+        boolean isCommentOwner = comment.getUserId().equals(userId);
+        boolean isRecipeOwner = recipe.getUserId().equals(userId);
+
+        if (!isCommentOwner && !isRecipeOwner) {
             throw new UnauthorizedAccessException("You do not have permission to delete this comment");
         }
 
         commentRepository.delete(comment);
-        log.info("Comment with ID {} deleted successfully", commentId);
+        log.info("Comment with ID {} deleted successfully by user {}. Comment owner: {}, Recipe owner: {}", 
+                commentId, userId, comment.getUserId(), recipe.getUserId());
     }
 
     /**

@@ -179,26 +179,11 @@ public class RecipeSearchService {
         }
         
         try {
-            // Get author information from user service
-            String authorName = userService.getUsernameById(response.getCreatedById());
-            log.info("Setting author name '{}' for recipe {}", authorName, response.getId());
-            
-            // If we get back Unknown User, use a better default
-            if (authorName == null || "Unknown User".equals(authorName)) {
-                log.warn("User service returned 'Unknown User' for ID {}, using better fallback", response.getCreatedById());
-                authorName = "Chef"; 
-            }
-            
-            // Set both fields to ensure consistency
-            response.setAuthorName(authorName);
-            response.setUsername(authorName);
-            
-            log.debug("Recipe {} author fields: authorName='{}', username='{}'", 
-                response.getId(), response.getAuthorName(), response.getUsername());
+            response.setAuthorName(userService.getUsernameById(response.getCreatedById()));
+            response.setUsername(response.getAuthorName()); // Keep these in sync
         } catch (Exception e) {
-            log.error("Failed to get author name for recipe {}: {}", response.getId(), e.getMessage());
-            response.setAuthorName("Chef");
-            response.setUsername("Chef");
+            response.setAuthorName("Unknown User");
+            response.setUsername("Unknown User");
         }
     }
 

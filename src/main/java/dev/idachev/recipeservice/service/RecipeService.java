@@ -28,6 +28,8 @@ import java.time.LocalDateTime;
 import java.util.Comparator;
 import java.util.List;
 import java.util.UUID;
+import java.util.Map;
+import java.util.HashMap;
 
 /**
  * Service for recipe management operations.
@@ -281,12 +283,10 @@ public class RecipeService {
     }
 
     /**
-     * Enhance a recipe response with user interaction information.
-     * Public to allow other services to access the complete enhancement logic.
+     * Enhance a recipe response with user interactions (favorites, comments, votes, etc.)
      */
-    public RecipeResponse enhanceWithUserInteractions(RecipeResponse response, UUID userId) {
+    private RecipeResponse enhanceWithUserInteractions(RecipeResponse response, UUID userId) {
         if (response == null) {
-            log.debug("enhanceWithUserInteractions: response is null");
             return null;
         }
 
@@ -304,54 +304,52 @@ public class RecipeService {
             response.setCommentCount(commentCount);
             
             // Get vote information
-            response.setUpvotes(response.getUpvotes() != null ? response.getUpvotes() : 0);
-            response.setDownvotes(response.getDownvotes() != null ? response.getDownvotes() : 0);
+            // Check if we need to fetch vote counts from the database
+            boolean needVoteCounts = response.getUpvotes() == null || response.getDownvotes() == null;
+            
+            if (needVoteCounts) {
+                log.debug("Fetching vote counts from database for recipe {}", response.getId());
+                long upvoteCount = voteService.getUpvoteCount(response.getId());
+                long downvoteCount = voteService.getDownvoteCount(response.getId());
+                response.setUpvotes((int) upvoteCount);
+                response.setDownvotes((int) downvoteCount);
+            } else {
+                // Ensure non-null values
+                response.setUpvotes(response.getUpvotes() != null ? response.getUpvotes() : 0);
+                response.setDownvotes(response.getDownvotes() != null ? response.getDownvotes() : 0);
+                log.debug("Using existing vote counts: up={}, down={}", response.getUpvotes(), response.getDownvotes());
+            }
             
             // Get user's vote on this recipe
             RecipeVote.VoteType userVote = voteService.getUserVote(response.getId(), userId);
+            // Only set userVote if it's not null, otherwise leave it null/undefined
             if (userVote != null) {
                 response.setUserVote(userVote.toString());
+            } else {
+                response.setUserVote(null); // Explicitly set to null for clarity
             }
+            
+            log.debug("Enhanced recipe {} with votes: up={}, down={}, userVote={}", 
+                    response.getId(), response.getUpvotes(), response.getDownvotes(), response.getUserVote());
     
             // Add author information
-            log.info("Enhancing recipe {} with author information. CreatedById: {}", 
-                    response.getId(), response.getCreatedById());
-            
             if (response.getCreatedById() != null) {
                 try {
-                    // Get author information from user service
-                    String authorName = userService.getUsernameById(response.getCreatedById());
-                    log.info("Setting author name '{}' for recipe {}", authorName, response.getId());
-                    
-                    // If we get back Unknown User, use a better default
-                    if (authorName == null || "Unknown User".equals(authorName)) {
-                        log.warn("User service returned 'Unknown User' for ID {}, using better fallback", response.getCreatedById());
-                        authorName = "Chef"; 
+                    String username = userService.getUsernameById(response.getCreatedById());
+                    if (username != null && !"Unknown User".equals(username)) {
+                        response.setAuthorName(username);
+                        response.setUsername(username);
+                    } else {
+                        response.setAuthorName("Unknown User");
                     }
-                    
-                    // EXPLICITLY set both authorName and username fields with the same value
-                    response.setAuthorName(authorName);
-                    response.setUsername(authorName);
-                    
-                    // Verify fields are set correctly in the log
-                    log.info("AUTHOR DEBUG - Recipe {} author fields after setting: authorName='{}', username='{}'", 
-                        response.getId(), response.getAuthorName(), response.getUsername());
-                } catch (Exception e) {
-                    log.error("Failed to get author name for recipe {}: {}", response.getId(), e.getMessage(), e);
-                    // Set a default value if author name lookup fails
-                    response.setAuthorName("Chef");
-                    response.setUsername("Chef");
-                    
-                    log.info("AUTHOR DEBUG - Recipe {} using fallback author: authorName='{}', username='{}'", 
-                        response.getId(), response.getAuthorName(), response.getUsername());
+                    response.setAuthorId(response.getCreatedById().toString());
+                } catch (Exception ex) {
+                    log.warn("Failed to get author info for recipe {}", response.getId());
+                    response.setAuthorName("Unknown User");
+                    response.setAuthorId(response.getCreatedById().toString());
                 }
             } else {
-                log.warn("Recipe {} has no author ID", response.getId());
-                response.setAuthorName("Unknown Chef");
-                response.setUsername("Unknown Chef");
-                
-                log.info("AUTHOR DEBUG - Recipe {} has no author ID, using: authorName='{}', username='{}'", 
-                    response.getId(), response.getAuthorName(), response.getUsername());
+                response.setAuthorName("Unknown User");
             }
         } catch (Exception e) {
             log.error("Error enhancing recipe with user interactions: {}", e.getMessage(), e);

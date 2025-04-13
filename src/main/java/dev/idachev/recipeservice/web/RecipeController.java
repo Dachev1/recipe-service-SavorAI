@@ -163,57 +163,23 @@ public class RecipeController {
             @PathVariable UUID id,
             @RequestHeader("Authorization") String token) {
         UUID userId = userService.getUserIdFromToken(token);
-        
-        // Get the recipe with all user interactions (this already includes author info)
         RecipeResponse response = recipeService.getRecipeById(id, userId);
         
-        // Add detailed debugging info to server logs
-        log.info("DEBUG ENDPOINT - Recipe details for id {}", id);
-        log.info("DEBUG ENDPOINT - CreatedById: {}", response.getCreatedById());
-        log.info("DEBUG ENDPOINT - AuthorName: {}", response.getAuthorName());
-        log.info("DEBUG ENDPOINT - Username: {}", response.getUsername());
-        
-        // Check for Unknown User values and fix them
-        if (response.getCreatedById() != null) {
-            boolean needsFixing = false;
+        // Try to fix missing username if needed
+        if (response.getCreatedById() != null && 
+            ("Unknown User".equals(response.getAuthorName()) || response.getAuthorName() == null)) {
             
-            if (response.getUsername() == null || 
-                response.getAuthorName() == null || 
-                "Unknown User".equals(response.getUsername()) || 
-                "Unknown User".equals(response.getAuthorName())) {
-                
-                needsFixing = true;
-                log.warn("DEBUG ENDPOINT - Username/authorName missing or set to Unknown User! Attempting direct fix");
-            }
-            
-            if (needsFixing) {
-                try {
-                    // Call the user service directly to bypass any caching issues
-                    log.info("DEBUG ENDPOINT - Trying direct lookup for userId: {}", response.getCreatedById());
-                    
-                    String username = userService.getUsernameById(response.getCreatedById());
-                    
-                    if (username != null && !"Unknown User".equals(username)) {
-                        // We got a real username
-                        response.setUsername(username);
-                        response.setAuthorName(username);
-                        log.info("DEBUG ENDPOINT - Successfully set username: {}", username);
-                    } else {
-                        // Still got Unknown User or null, use a better fallback
-                        response.setUsername("Chef");
-                        response.setAuthorName("Chef");
-                        log.info("DEBUG ENDPOINT - Using fallback 'Chef' due to Unknown User result");
-                    }
-                } catch (Exception e) {
-                    log.error("DEBUG ENDPOINT - Error getting username: {}", e.getMessage());
-                    response.setUsername("Chef");
-                    response.setAuthorName("Chef");
+            try {
+                // Direct API call attempt
+                String username = userService.getUsernameById(response.getCreatedById());
+                if (username != null && !"Unknown User".equals(username)) {
+                    response.setUsername(username);
+                    response.setAuthorName(username);
+                    log.debug("DEBUG - Fixed username via API: {}", username);
                 }
+            } catch (Exception e) {
+                log.warn("DEBUG - API username lookup failed for recipe {}", id);
             }
-        } else {
-            log.warn("DEBUG ENDPOINT - No createdById available for recipe {}", id);
-            response.setUsername("Chef");
-            response.setAuthorName("Chef");
         }
         
         return ResponseEntity.ok(response);
@@ -306,14 +272,31 @@ public class RecipeController {
             @Valid @RequestBody VoteRequest request,
             @RequestHeader("Authorization") String token) {
         
+        log.debug("Vote request received: recipeId={}, voteType={}", id, request.getVoteType());
+        
         UUID userId = userService.getUserIdFromToken(token);
+        log.debug("Extracted userId: {}", userId);
+        
         RecipeVote.VoteType voteType = "up".equalsIgnoreCase(request.getVoteType()) 
                 ? RecipeVote.VoteType.UPVOTE 
                 : RecipeVote.VoteType.DOWNVOTE;
+        
+        log.debug("Mapped vote type: {}", voteType);
                 
-        return ResponseEntity.ok(
-            recipeService.toResponse(voteService.vote(id, voteType, userId), userId)
-        );
+        try {
+            Recipe updatedRecipe = voteService.vote(id, voteType, userId);
+            log.debug("Vote processed successfully, new upvotes: {}, downvotes: {}", 
+                    updatedRecipe.getUpvotes(), updatedRecipe.getDownvotes());
+            
+            RecipeResponse response = recipeService.toResponse(updatedRecipe, userId);
+            log.debug("Response prepared, upvotes: {}, downvotes: {}, userVote: {}", 
+                    response.getUpvotes(), response.getDownvotes(), response.getUserVote());
+                    
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            log.error("Error processing vote: {}", e.getMessage(), e);
+            throw e;
+        }
     }
 
     @Operation(summary = "Generate recipe from ingredients")

@@ -42,4 +42,7 @@ public class CommentResponse {
     
     @Schema(description = "Whether the current user is the author of this comment")
     private boolean isOwner;
+    
+    @Schema(description = "Whether the current user is the owner of the recipe this comment belongs to")
+    private boolean isRecipeOwner;
 } 

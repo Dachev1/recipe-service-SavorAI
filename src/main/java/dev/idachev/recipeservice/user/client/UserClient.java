@@ -12,6 +12,7 @@ import java.util.UUID;
 
 /**
  * Client interface for communicating with the user service.
+ * Note: All token parameters must include the "Bearer " prefix.
  */
 @FeignClient(name = "user-service", url = "${app.services.user-service.url}")
 public interface UserClient {
@@ -28,7 +29,7 @@ public interface UserClient {
     ResponseEntity<UserDTO> getCurrentUser(@RequestHeader("Authorization") String token);
 
     /**
-     * Get user by ID.
+     * Get user by ID without authentication - internal service communication.
      */
     @GetMapping("/api/v1/users/{id}")
     ResponseEntity<UserDTO> getUserById(@PathVariable("id") UUID userId);
@@ -44,4 +45,10 @@ public interface UserClient {
      */
     @GetMapping("/api/v1/profile/{username}")
     ResponseEntity<UserResponse> getUserProfileByUsername(@PathVariable("username") String username);
+
+    /**
+     * Get username by ID - lightweight endpoint for internal use.
+     */
+    @GetMapping("/api/v1/users/{id}/username")
+    ResponseEntity<String> getUsernameById(@PathVariable("id") UUID userId);
 } 

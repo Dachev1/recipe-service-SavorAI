@@ -66,6 +66,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                         UUID userId = jwtUtil.extractUserId(token);
                         String username = jwtUtil.extractUsername(token);
                         List<GrantedAuthority> authorities = jwtUtil.extractAuthorities(token);
+                        
+                        // Add detailed logging for troubleshooting user ID issues
+                        log.debug("Authentication successful - Username: {}, UserID: {}, Authorities: {}", 
+                                 username, userId, authorities);
 
                         UsernamePasswordAuthenticationToken auth = new UsernamePasswordAuthenticationToken(
                                 username, userId, authorities);
@@ -77,7 +81,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 } catch (ExpiredJwtException e) {
                     handleAuthenticationFailure(response, "Token expired", HttpStatus.UNAUTHORIZED);
                     return;
-                } catch (MalformedJwtException | SignatureException e) {
+                } catch (SignatureException | MalformedJwtException e) {
                     handleAuthenticationFailure(response, "Invalid token format", HttpStatus.UNAUTHORIZED);
                     return;
                 } catch (JwtException e) {
@@ -95,10 +99,22 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private String extractJwtFromRequest(HttpServletRequest request) {
         String bearerToken = request.getHeader("Authorization");
         if (!StringUtils.hasText(bearerToken) || !bearerToken.startsWith("Bearer ")) {
+            log.debug("No valid bearer token found in request headers");
             return "";
         }
         
-        return bearerToken.substring(7).trim();
+        String token = bearerToken.substring(7).trim();
+        // Enhanced logging for token length and structure check
+        if (token.length() > 0) {
+            log.debug("Bearer token extracted from request (length: {})", token.length());
+            String[] parts = token.split("\\.");
+            if (parts.length != 3) {
+                log.warn("JWT token has incorrect format - expected 3 parts, got {}", parts.length);
+            } else {
+                log.debug("JWT token structure valid (header.payload.signature)");
+            }
+        }
+        return token;
     }
 
     private boolean isTokenBlacklisted(String token) {

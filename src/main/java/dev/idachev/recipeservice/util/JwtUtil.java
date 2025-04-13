@@ -60,21 +60,17 @@ public class JwtUtil {
     public UUID extractUserId(String token) {
         try {
             final Claims claims = extractAllClaims(token);
-            // Try to get UUID directly first
+            // The user-service stores userId as a string, so we should extract it the same way
+            String userIdStr = claims.get("userId", String.class);
+            if (userIdStr == null || userIdStr.isEmpty()) {
+                log.warn("No userId claim found in token or empty value");
+                return null;
+            }
+            
             try {
-                return claims.get("userId", UUID.class);
-            } catch (Exception e) {
-                // If that fails, get as String and convert
-                String userIdStr = claims.get("userId", String.class);
-                if (userIdStr != null && !userIdStr.isEmpty()) {
-                    try {
-                        return UUID.fromString(userIdStr);
-                    } catch (IllegalArgumentException iae) {
-                        log.error("Invalid UUID format in token: {}", iae.getMessage());
-                        return null;
-                    }
-                }
-                log.warn("No userId claim found in token");
+                return UUID.fromString(userIdStr);
+            } catch (IllegalArgumentException iae) {
+                log.error("Invalid UUID format in token: {}", iae.getMessage());
                 return null;
             }
         } catch (ExpiredJwtException e) {
@@ -188,10 +184,26 @@ public class JwtUtil {
      */
     public boolean validateToken(String token) {
         try {
+            // Try to decode token header for debugging, without validating signature
+            try {
+                String[] parts = token.split("\\.");
+                if (parts.length >= 2) {
+                    Base64.Decoder decoder = Base64.getUrlDecoder();
+                    String header = new String(decoder.decode(parts[0]));
+                    String payload = new String(decoder.decode(parts[1]));
+                    log.debug("JWT token header: {}", header);
+                    log.debug("JWT token claims preview: {}", payload.substring(0, Math.min(50, payload.length())) + "...");
+                }
+            } catch (Exception e) {
+                log.warn("Error inspecting token contents: {}", e.getMessage());
+            }
+            
             Jwts.parserBuilder()
                 .setSigningKey(signingKey)
                 .build()
                 .parseClaimsJws(token);
+            
+            log.debug("JWT token validated successfully with recipe-service key");
             return true;
         } catch (ExpiredJwtException e) {
             log.error("JWT token expired: {}", e.getMessage());
@@ -200,7 +212,7 @@ public class JwtUtil {
             log.error("Invalid JWT token format: {}", e.getMessage());
             return false;
         } catch (SignatureException e) {
-            log.error("Invalid JWT signature: {}", e.getMessage());
+            log.error("Invalid JWT signature (JWT secret mismatch?): {}", e.getMessage());
             return false;
         } catch (UnsupportedJwtException e) {
             log.error("Unsupported JWT token: {}", e.getMessage());
