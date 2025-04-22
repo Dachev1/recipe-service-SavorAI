@@ -19,6 +19,9 @@ import org.springframework.stereotype.Component;
 import org.springframework.util.AntPathMatcher;
 import org.springframework.util.StringUtils;
 import org.springframework.web.filter.OncePerRequestFilter;
+import dev.idachev.recipeservice.web.dto.ErrorResponse;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import java.time.LocalDateTime;
 
 import java.io.IOException;
 import java.util.List;
@@ -32,15 +35,18 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private final JwtUtil jwtUtil;
     private final AntPathMatcher pathMatcher;
     private final ConcurrentHashMap<String, Long> tokenBlacklist;
+    private final ObjectMapper objectMapper;
     private final List<String> publicPaths = List.of(
             "/api-docs/**", "/swagger-ui/**", "/actuator/**", "/error/**",
             "/api/v1/recipes/auth-test", "/v1/recipes/auth-test");
 
     public JwtAuthenticationFilter(JwtUtil jwtUtil, AntPathMatcher pathMatcher,
-                                   ConcurrentHashMap<String, Long> tokenBlacklist) {
+                                   ConcurrentHashMap<String, Long> tokenBlacklist,
+                                   ObjectMapper objectMapper) {
         this.jwtUtil = jwtUtil;
         this.pathMatcher = pathMatcher;
         this.tokenBlacklist = tokenBlacklist;
+        this.objectMapper = objectMapper;
     }
 
     @Override
@@ -66,10 +72,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                         UUID userId = jwtUtil.extractUserId(token);
                         String username = jwtUtil.extractUsername(token);
                         List<GrantedAuthority> authorities = jwtUtil.extractAuthorities(token);
-                        
+
                         // Add detailed logging for troubleshooting user ID issues
-                        log.debug("Authentication successful - Username: {}, UserID: {}, Authorities: {}", 
-                                 username, userId, authorities);
+                        log.debug("Authentication successful - Username: {}, UserID: {}, Authorities: {}",
+                                username, userId, authorities);
 
                         UsernamePasswordAuthenticationToken auth = new UsernamePasswordAuthenticationToken(
                                 username, userId, authorities);
@@ -102,10 +108,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             log.debug("No valid bearer token found in request headers");
             return "";
         }
-        
+
         String token = bearerToken.substring(7).trim();
         // Enhanced logging for token length and structure check
-        if (token.length() > 0) {
+        if (!token.isEmpty()) {
             log.debug("Bearer token extracted from request (length: {})", token.length());
             String[] parts = token.split("\\.");
             if (parts.length != 3) {
@@ -130,9 +136,16 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                                              String message, HttpStatus status) throws IOException {
         response.setStatus(status.value());
         response.setContentType(MediaType.APPLICATION_JSON_VALUE);
-        String json = String.format(
-                "{\"timestamp\":\"%s\",\"status\":%d,\"error\":\"%s\",\"message\":\"%s\"}",
-                java.time.LocalDateTime.now(), status.value(), status.getReasonPhrase(), message);
-        response.getWriter().write(json);
+
+        // Use ErrorResponse DTO
+        ErrorResponse errorResponse = new ErrorResponse(
+            status.value(),
+            status.getReasonPhrase() + ": " + message, // Combine status reason and specific message
+            LocalDateTime.now()
+            // No details map
+        );
+
+        // Use ObjectMapper to write JSON
+        response.getWriter().write(objectMapper.writeValueAsString(errorResponse));
     }
 } 

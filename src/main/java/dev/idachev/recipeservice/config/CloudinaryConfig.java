@@ -2,7 +2,6 @@ package dev.idachev.recipeservice.config;
 
 import com.cloudinary.Cloudinary;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -10,30 +9,24 @@ import java.util.Map;
 
 /**
  * Configuration for Cloudinary image storage service.
+ * Uses type-safe CloudinaryProperties.
  */
 @Configuration
 public class CloudinaryConfig {
 
-    private final String cloudName;
-    private final String apiKey;
-    private final String apiSecret;
+    private final CloudinaryProperties cloudinaryProperties;
 
     @Autowired
-    public CloudinaryConfig(
-            @Value("${cloudinary.cloud-name}") String cloudName,
-            @Value("${cloudinary.api-key}") String apiKey,
-            @Value("${cloudinary.api-secret}") String apiSecret) {
-        this.cloudName = cloudName;
-        this.apiKey = apiKey;
-        this.apiSecret = apiSecret;
+    public CloudinaryConfig(CloudinaryProperties cloudinaryProperties) {
+        this.cloudinaryProperties = cloudinaryProperties;
     }
 
     @Bean
     public Cloudinary cloudinary() {
         return new Cloudinary(Map.of(
-                "cloud_name", cloudName,
-                "api_key", apiKey,
-                "api_secret", apiSecret,
+                "cloud_name", cloudinaryProperties.cloudName(),
+                "api_key", cloudinaryProperties.apiKey(),
+                "api_secret", cloudinaryProperties.apiSecret(),
                 "secure", true
         ));
     }

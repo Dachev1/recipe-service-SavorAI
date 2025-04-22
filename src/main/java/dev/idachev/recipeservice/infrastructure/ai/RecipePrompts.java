@@ -76,18 +76,4 @@ public final class RecipePrompts {
         
         return promptBuilder.toString();
     }
-
-    /**
-     * Prompt template for unique recipe generation from ingredients
-     */
-    public static String getUniqueRecipePrompt(String ingredients, String uniqueId) {
-        return String.format(
-                "I need a creative and unique recipe using these ingredients: %s. " +
-                "Only reject obviously non-food items like cars, electronics, etc. " +
-                "Accept all normal food ingredients. " +
-                "Be creative with cuisine style and cooking method. " +
-                "Make it unique with ID: %s",
-                ingredients, uniqueId
-        );
-    }
 } 

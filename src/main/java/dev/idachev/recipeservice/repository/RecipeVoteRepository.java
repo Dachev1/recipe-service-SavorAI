@@ -6,6 +6,7 @@ import org.springframework.stereotype.Repository;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 
 @Repository
@@ -17,7 +18,9 @@ public interface RecipeVoteRepository extends JpaRepository<RecipeVote, UUID> {
     
     List<RecipeVote> findByUserId(UUID userId);
     
-    long countByRecipeIdAndVoteType(UUID recipeId, RecipeVote.VoteType voteType);
+    List<RecipeVote> findByUserIdAndRecipeIdIn(UUID userId, Set<UUID> recipeIds);
     
+    // TODO: Verify intended usage. If Recipe entity uses cascade delete for votes,
+    // this method might be redundant or only needed for specific bulk operations.
     void deleteByRecipeId(UUID recipeId);
 } 

@@ -1,18 +1,17 @@
 package dev.idachev.recipeservice.model;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Entity
 @Table
-@Data
-@Builder
+@Getter
+@ToString
+@EqualsAndHashCode(of = "id")
+@Builder(toBuilder = true)
 @NoArgsConstructor
 @AllArgsConstructor
 public class Comment {
@@ -33,13 +32,11 @@ public class Comment {
     @Column(nullable = false)
     private UUID recipeId;
 
-    @Column
-    @Builder.Default
-    private LocalDateTime createdAt = LocalDateTime.now();
+    @Column(updatable = false)
+    private LocalDateTime createdAt;
 
     @Column
-    @Builder.Default
-    private LocalDateTime updatedAt = LocalDateTime.now();
+    private LocalDateTime updatedAt;
 
     @PrePersist
     protected void onCreate() {

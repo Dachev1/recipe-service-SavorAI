@@ -1,4 +1,4 @@
-package dev.idachev.recipeservice.mapper;
+package dev.idachev.recipeservice.web.mapper;
 
 import dev.idachev.recipeservice.model.FavoriteRecipe;
 import dev.idachev.recipeservice.model.Recipe;
@@ -44,19 +44,22 @@ public class FavoriteRecipeMapper {
 
     /**
      * Converts a FavoriteRecipe entity and Recipe entity to a complete FavoriteRecipeDto.
+     * Uses the FavoriteRecipeDto record constructor.
      */
     public static FavoriteRecipeDto toDtoWithRecipe(FavoriteRecipe favoriteRecipe, Recipe recipe, RecipeMapper recipeMapper) {
         Objects.requireNonNull(favoriteRecipe, "FavoriteRecipe cannot be null");
         Objects.requireNonNull(recipe, "Recipe cannot be null");
         Objects.requireNonNull(recipeMapper, "RecipeMapper cannot be null");
 
+        // Map the nested recipe first
         RecipeResponse recipeResponse = recipeMapper.toResponse(recipe);
 
-        return FavoriteRecipeDto.builder()
-                .recipeId(favoriteRecipe.getRecipeId())
-                .userId(favoriteRecipe.getUserId())
-                .addedAt(favoriteRecipe.getCreatedAt())
-                .recipe(recipeResponse)
-                .build();
+        // Use the FavoriteRecipeDto record constructor
+        return new FavoriteRecipeDto(
+                favoriteRecipe.getRecipeId(),
+                favoriteRecipe.getUserId(),
+                favoriteRecipe.getCreatedAt(), // Map createdAt to addedAt
+                recipeResponse
+        );
     }
 } 

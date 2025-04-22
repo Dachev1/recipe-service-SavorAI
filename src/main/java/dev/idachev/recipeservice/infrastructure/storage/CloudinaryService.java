@@ -1,7 +1,6 @@
 package dev.idachev.recipeservice.infrastructure.storage;
 
 import com.cloudinary.Cloudinary;
-import dev.idachev.recipeservice.exception.ImageProcessingException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -64,15 +63,15 @@ public class CloudinaryService {
         if (file == null || file.isEmpty()) {
             return FALLBACK_IMAGE_URL;
         }
-        
+
         log.debug("Uploading file: {}", file.getOriginalFilename());
-        
+
         Map<String, Object> options = Map.of(
                 "folder", RECIPE_IMAGES_FOLDER,
                 "resource_type", RESOURCE_TYPE,
                 "public_id", generateUniqueFilename()
         );
-        
+
         try {
             return processUpload(file.getBytes(), options);
         } catch (Exception e) {

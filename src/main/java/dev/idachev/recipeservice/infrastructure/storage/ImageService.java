@@ -14,7 +14,7 @@ import org.springframework.web.multipart.MultipartFile;
 public class ImageService {
 
     private final CloudinaryService cloudinaryService;
-    
+
     @Autowired
     public ImageService(CloudinaryService cloudinaryService) {
         this.cloudinaryService = cloudinaryService;

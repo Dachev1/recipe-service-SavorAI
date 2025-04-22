@@ -3,12 +3,12 @@ package dev.idachev.recipeservice.infrastructure.ai;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import dev.idachev.recipeservice.exception.AIServiceException;
 import dev.idachev.recipeservice.infrastructure.storage.CloudinaryService;
-import dev.idachev.recipeservice.mapper.AIServiceMapper;
 import dev.idachev.recipeservice.model.DifficultyLevel;
 import dev.idachev.recipeservice.web.dto.AIErrorResponse;
 import dev.idachev.recipeservice.web.dto.MacrosDto;
 import dev.idachev.recipeservice.web.dto.RecipeRequest;
 import dev.idachev.recipeservice.web.dto.SimplifiedRecipeResponse;
+import dev.idachev.recipeservice.web.mapper.AIServiceMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.ChatClient;
 import org.springframework.ai.chat.messages.Message;
@@ -29,6 +29,7 @@ import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
+import java.math.BigDecimal;
 
 /**
  * AI recipe generation service using Spring AI's OpenAI integration
@@ -80,18 +81,18 @@ public class AIService {
             String imageUrl = null;
 
             // Generate image only if enabled
-            if (imageGenerationEnabled && StringUtils.hasText(recipeRequest.getTitle())) {
+            if (imageGenerationEnabled && StringUtils.hasText(recipeRequest.title())) {
                 // Try to generate image, but handle failure gracefully
                 try {
-                    imageUrl = generateRecipeImage(recipeRequest.getTitle(), recipeRequest.getServingSuggestions());
+                    imageUrl = generateRecipeImage(recipeRequest.title(), recipeRequest.servingSuggestions());
                 } catch (Exception e) {
-                    log.warn("Failed to generate image for recipe {}: {}", recipeRequest.getTitle(), e.getMessage());
+                    log.warn("Failed to generate image for recipe {}: {}", recipeRequest.title(), e.getMessage());
                     // Continue without image
                 }
             }
 
             SimplifiedRecipeResponse result = AIServiceMapper.toSimplifiedResponse(recipeRequest, imageUrl);
-            log.info("Generated recipe: {}", result.getTitle());
+            log.info("Generated recipe: {}", result.title());
             return result;
         } catch (Exception e) {
             log.error("Error generating recipe: {}", e.getMessage());
@@ -160,12 +161,12 @@ public class AIService {
             }
             
             // Try to parse as a recipe
-            RecipeRequest recipeRequest = objectMapper.readValue(content, RecipeRequest.class);
+            RecipeRequest rawRecipeRequest = objectMapper.readValue(content, RecipeRequest.class);
             
             // Normalize and validate required fields are present with reasonable values
-            normalizeRecipeFields(recipeRequest);
+            RecipeRequest normalizedRecipeRequest = normalizeRecipeFields(rawRecipeRequest);
             
-            return recipeRequest;
+            return normalizedRecipeRequest;
         } catch (AIServiceException e) {
             throw e;
         } catch (Exception e) {
@@ -260,7 +261,7 @@ public class AIService {
             log.debug("Image generated successfully, uploading to Cloudinary");
             return uploadToCloudinary(imageUrl, recipeTitle);
         } catch (Exception e) {
-            log.error("Error generating recipe image: {}", e.getMessage());
+            log.error("Error generating recipe image: {}", recipeTitle, e);
             return null;
         }
     }
@@ -287,56 +288,57 @@ public class AIService {
     /**
      * Ensures all required fields in the recipe have valid values, providing defaults when necessary.
      * Particularly focuses on difficulty level and totalTimeMinutes which are critical for the UI.
+     * Returns a new RecipeRequest instance with normalized fields.
      * 
-     * @param recipe The recipe request object to normalize
+     * @param inputRecipe The potentially incomplete recipe request object from AI
+     * @return A new RecipeRequest instance with normalized/defaulted fields
      */
-    private void normalizeRecipeFields(RecipeRequest recipe) {
-        // Ensure difficulty level is set
-        if (recipe.getDifficulty() == null) {
+    private RecipeRequest normalizeRecipeFields(RecipeRequest inputRecipe) {
+        // Extract values from input, applying defaults if necessary
+        DifficultyLevel difficulty = inputRecipe.difficulty();
+        if (difficulty == null) {
             log.debug("Recipe missing difficulty level, setting default MEDIUM");
-            recipe.setDifficulty(DifficultyLevel.MEDIUM);
+            difficulty = DifficultyLevel.MEDIUM;
         }
         
-        // Ensure totalTimeMinutes is set with a reasonable value based on recipe complexity
-        if (recipe.getTotalTimeMinutes() == null || recipe.getTotalTimeMinutes() <= 0) {
+        Integer totalTimeMinutes = inputRecipe.totalTimeMinutes();
+        if (totalTimeMinutes == null || totalTimeMinutes <= 0) {
             int defaultTime;
-            
-            // Base default time on recipe complexity (ingredients count, difficulty)
-            if (recipe.getIngredients() != null) {
-                int ingredientCount = recipe.getIngredients().size();
-                
-                if (DifficultyLevel.EASY.equals(recipe.getDifficulty())) {
-                    defaultTime = Math.max(15, ingredientCount * 2);
-                } else if (DifficultyLevel.HARD.equals(recipe.getDifficulty())) {
-                    defaultTime = Math.max(45, ingredientCount * 5);
-                } else {
-                    // MEDIUM difficulty
-                    defaultTime = Math.max(30, ingredientCount * 3);
-                }
-            } else {
-                // If no ingredients, use fixed defaults based on difficulty
-                if (DifficultyLevel.EASY.equals(recipe.getDifficulty())) {
-                    defaultTime = 20;
-                } else if (DifficultyLevel.HARD.equals(recipe.getDifficulty())) {
-                    defaultTime = 60;
-                } else {
-                    defaultTime = 40;
-                }
+            int ingredientCount = (inputRecipe.ingredients() != null) ? inputRecipe.ingredients().size() : 0;
+
+            // Use the already determined (or defaulted) difficulty
+            if (DifficultyLevel.EASY.equals(difficulty)) {
+                defaultTime = Math.max(15, ingredientCount * 2);
+            } else if (DifficultyLevel.HARD.equals(difficulty)) {
+                defaultTime = Math.max(45, ingredientCount * 5);
+            } else { // MEDIUM
+                defaultTime = Math.max(30, ingredientCount * 3);
             }
             
-            log.debug("Recipe missing totalTimeMinutes, setting default {} based on difficulty and ingredients", defaultTime);
-            recipe.setTotalTimeMinutes(defaultTime);
+            log.debug("Recipe missing or invalid totalTimeMinutes, setting default {} based on difficulty ({}) and ingredients ({})", 
+                      defaultTime, difficulty, ingredientCount);
+            totalTimeMinutes = defaultTime;
         }
         
-        // Ensure macros object exists
-        if (recipe.getMacros() == null) {
-            MacrosDto macros = new MacrosDto();
-            macros.setCalories(0);
-            macros.setProteinGrams(0.0);
-            macros.setCarbsGrams(0.0);
-            macros.setFatGrams(0.0);
-            recipe.setMacros(macros);
+        MacrosDto macros = inputRecipe.macros();
+        if (macros == null) {
+            macros = new MacrosDto(
+                BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO
+            );
             log.debug("Recipe missing macros, initializing empty macros object");
         }
+
+        // Return a new record instance with potentially updated values
+        return new RecipeRequest(
+            inputRecipe.title(),
+            inputRecipe.servingSuggestions(),
+            inputRecipe.instructions(),
+            inputRecipe.imageUrl(),
+            inputRecipe.ingredients(), // Assume list is fine as is
+            totalTimeMinutes, // Use normalized value
+            difficulty, // Use normalized value
+            inputRecipe.isAiGenerated(), // Keep original
+            macros // Use normalized value
+        );
     }
 } 

@@ -1,5 +1,6 @@
 package dev.idachev.recipeservice.service;
 
+import dev.idachev.recipeservice.exception.AIServiceException;
 import dev.idachev.recipeservice.exception.ImageProcessingException;
 import dev.idachev.recipeservice.infrastructure.ai.AIService;
 import dev.idachev.recipeservice.infrastructure.storage.ImageService;
@@ -35,31 +36,34 @@ public class RecipeImageService {
      * @param title               Recipe title, used for generating an image if none is uploaded
      * @param servingSuggestions  Recipe serving suggestions, used for generating an image
      * @param image               Optional image file to upload
-     * @return URL of the processed image, or null if no image could be processed
+     * @return URL of the processed image
+     * @throws ImageProcessingException if processing fails (upload or generation)
+     * @throws AIServiceException if AI generation specifically fails (propagated)
      */
-    public String processRecipeImage(String title, String servingSuggestions, MultipartFile image) {
+    public String processRecipeImage(String title, String servingSuggestions, MultipartFile image)
+            throws ImageProcessingException, AIServiceException {
         try {
-            // If an image file is provided, upload it
             if (image != null && !image.isEmpty()) {
-                log.debug("Uploading image for recipe: {}", title);
-
+                log.debug("Uploading image for recipe title: {}", title);
                 String imageUrl = uploadRecipeImage(image);
                 log.info("Image uploaded for recipe '{}': {}", title, imageUrl);
-
                 return imageUrl;
             }
 
-            // Otherwise, if title is available, generate an image
             if (StringUtils.hasText(title)) {
-                log.debug("No image provided, will attempt to generate one for: {}", title);
+                log.debug("No image provided, attempting generation for: {}", title);
                 return generateRecipeImage(title, servingSuggestions);
             }
 
             log.debug("No image provided and no title available for image generation");
             return null;
+        } catch (ImageProcessingException | AIServiceException e) {
+            log.error("Failed to process recipe image for title '{}': {}", title, e.getMessage());
+            throw e;
         } catch (Exception e) {
-            log.error("Failed to process recipe image: {}", e.getMessage());
-            return null;
+            String errorMessage = String.format("Unexpected error processing image for recipe title '%s': %s", title, e.getMessage());
+            log.error(errorMessage, e);
+            throw new ImageProcessingException(errorMessage, e);
         }
     }
 
@@ -70,7 +74,7 @@ public class RecipeImageService {
      * @return URL of the uploaded image
      * @throws ImageProcessingException if upload fails
      */
-    private String uploadRecipeImage(MultipartFile image) {
+    private String uploadRecipeImage(MultipartFile image) throws ImageProcessingException {
         try {
             return imageService.uploadImage(image);
         } catch (Exception e) {
@@ -85,12 +89,14 @@ public class RecipeImageService {
      *
      * @param title               Recipe title, used as the primary prompt for generation
      * @param servingSuggestions  Recipe serving suggestions, used to enhance the prompt
-     * @return URL of the generated image, or null if generation fails
+     * @return URL of the generated image
+     * @throws ImageProcessingException if generation fails unexpectedly
+     * @throws AIServiceException if the AI service reports an error (propagated)
      */
-    public String generateRecipeImage(String title, String servingSuggestions) {
+    public String generateRecipeImage(String title, String servingSuggestions)
+            throws ImageProcessingException, AIServiceException {
         if (!StringUtils.hasText(title)) {
-            log.warn("Cannot generate image: Recipe title is empty");
-            return null;
+            throw new IllegalArgumentException("Cannot generate image: Recipe title is empty");
         }
 
         try {
@@ -98,15 +104,20 @@ public class RecipeImageService {
             String imageUrl = aiService.generateRecipeImage(title, servingSuggestions);
 
             if (!StringUtils.hasText(imageUrl)) {
-                log.warn("AI service returned empty image URL for recipe: {}", title);
-                return null;
+                String errorMessage = String.format("AI service returned empty image URL for recipe: %s", title);
+                log.warn(errorMessage);
+                throw new ImageProcessingException(errorMessage);
             }
 
             log.info("Successfully generated image for recipe: {}", title);
             return imageUrl;
+        } catch (AIServiceException e) {
+            log.error("AI service failed to generate image for title '{}': {}", title, e.getMessage());
+            throw e;
         } catch (Exception e) {
-            log.error("Failed to generate image: {}", e.getMessage(), e);
-            return null;
+            String errorMessage = String.format("Unexpected error generating image for recipe title '%s': %s", title, e.getMessage());
+            log.error(errorMessage, e);
+            throw new ImageProcessingException(errorMessage, e);
         }
     }
 } 

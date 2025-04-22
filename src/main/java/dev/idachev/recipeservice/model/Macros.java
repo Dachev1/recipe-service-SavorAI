@@ -1,16 +1,16 @@
 package dev.idachev.recipeservice.model;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
+import java.math.BigDecimal;
 import java.util.UUID;
 
 @Entity
 @Table
-@Data
+@Getter
+@ToString
+@EqualsAndHashCode(of = "id")
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
@@ -20,15 +20,15 @@ public class Macros {
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
-    @Column
-    private Double calories;
+    @Column(precision = 10, scale = 2)
+    private BigDecimal calories;
 
-    @Column
-    private Double proteinGrams;
+    @Column(precision = 10, scale = 2)
+    private BigDecimal proteinGrams;
 
-    @Column
-    private Double carbsGrams;
+    @Column(precision = 10, scale = 2)
+    private BigDecimal carbsGrams;
 
-    @Column
-    private Double fatGrams;
+    @Column(precision = 10, scale = 2)
+    private BigDecimal fatGrams;
 } 

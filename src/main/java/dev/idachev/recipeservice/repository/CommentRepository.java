@@ -7,6 +7,8 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
 @Repository
@@ -16,9 +18,19 @@ public interface CommentRepository extends JpaRepository<Comment, UUID> {
     
     List<Comment> findByRecipeId(UUID recipeId);
     
-    List<Comment> findByUserId(UUID userId);
+    Page<Comment> findByUserId(UUID userId, Pageable pageable);
     
     long countByRecipeId(UUID recipeId);
     
+    // TODO: Verify intended usage. If Recipe entity uses cascade delete for comments,
+    // this method might be redundant or only needed for specific bulk operations.
     void deleteByRecipeId(UUID recipeId);
+    
+    List<RecipeCommentCount> countByRecipeIdIn(Set<UUID> recipeIds);
+    
+    // Helper projection interface for the count query
+    interface RecipeCommentCount {
+        UUID getRecipeId();
+        long getCommentCount();
+    }
 } 

@@ -13,6 +13,11 @@ public class ApplicationContextHolder implements ApplicationContextAware {
     
     private static ApplicationContext context;
     
+    // TODO: Investigate usage of ApplicationContextHolder.getBean() throughout the codebase.
+    // Refactor usages to use standard Spring Dependency Injection (@Autowired, constructor injection)
+    // wherever possible. Only keep this static access if absolutely necessary (e.g., for legacy code
+    // or specific framework integration points not supporting DI).
+
     @Override
     public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
         context = applicationContext;

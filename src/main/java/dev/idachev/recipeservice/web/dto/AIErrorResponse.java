@@ -7,6 +7,7 @@ import java.util.List;
 
 /**
  * DTO for handling error responses from the AI model when it detects non-food items
+ * TODO: Investigate usage. Is this only used internally in AIService? Consider making immutable (record) for consistency.
  */
 @Data
 @JsonIgnoreProperties(ignoreUnknown = true)

@@ -1,23 +1,24 @@
 package dev.idachev.recipeservice.model;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Entity
-@Table(name = "favorite_recipes")
-@Data
-@Builder
+@Table(name = "favorite_recipes", uniqueConstraints = {
+    @UniqueConstraint(columnNames = {"user_id", "recipe_id"})
+})
+@Getter
+@ToString
+@EqualsAndHashCode(of = {"userId", "recipeId"})
+@Builder(toBuilder = true)
 @NoArgsConstructor
 @AllArgsConstructor
 public class FavoriteRecipe {
     @Id
-    @GeneratedValue
+    @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
     @Column(nullable = false)
@@ -26,13 +27,11 @@ public class FavoriteRecipe {
     @Column(nullable = false)
     private UUID recipeId;
 
+    @Column(updatable = false)
     private LocalDateTime createdAt;
 
     @PrePersist
     protected void onCreate() {
-        if (id == null) {
-            id = UUID.randomUUID();
-        }
         createdAt = LocalDateTime.now();
     }
 }

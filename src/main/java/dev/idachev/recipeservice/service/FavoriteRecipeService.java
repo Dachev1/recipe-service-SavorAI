@@ -1,22 +1,20 @@
 package dev.idachev.recipeservice.service;
 
 import dev.idachev.recipeservice.exception.ResourceNotFoundException;
-import dev.idachev.recipeservice.mapper.FavoriteRecipeMapper;
-import dev.idachev.recipeservice.mapper.RecipeMapper;
 import dev.idachev.recipeservice.model.FavoriteRecipe;
 import dev.idachev.recipeservice.model.Recipe;
 import dev.idachev.recipeservice.repository.FavoriteRecipeRepository;
 import dev.idachev.recipeservice.repository.RecipeRepository;
 import dev.idachev.recipeservice.web.dto.FavoriteRecipeDto;
+import dev.idachev.recipeservice.web.mapper.FavoriteRecipeMapper;
+import dev.idachev.recipeservice.web.mapper.RecipeMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.util.StringUtils;
 
-import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -33,17 +31,14 @@ public class FavoriteRecipeService {
 
     private final FavoriteRecipeRepository favoriteRecipeRepository;
     private final RecipeRepository recipeRepository;
-    private final RecipeImageService recipeImageService;
     private final RecipeMapper recipeMapper;
 
     @Autowired
     public FavoriteRecipeService(FavoriteRecipeRepository favoriteRecipeRepository,
                                  RecipeRepository recipeRepository,
-                                 RecipeImageService recipeImageService,
                                  RecipeMapper recipeMapper) {
         this.favoriteRecipeRepository = favoriteRecipeRepository;
         this.recipeRepository = recipeRepository;
-        this.recipeImageService = recipeImageService;
         this.recipeMapper = recipeMapper;
     }
 
@@ -59,33 +54,16 @@ public class FavoriteRecipeService {
         }
 
         Recipe recipe = findRecipeByIdOrThrow(recipeId);
-        ensureRecipeHasImage(recipe);
 
-        FavoriteRecipe favoriteRecipe = FavoriteRecipeMapper.create(userId, recipe);
-        favoriteRecipeRepository.save(favoriteRecipe);
+        FavoriteRecipe favoriteRecipe = FavoriteRecipe.builder()
+                                            .userId(userId)
+                                            .recipeId(recipeId)
+                                            .build();
 
+        FavoriteRecipe savedFavorite = favoriteRecipeRepository.save(favoriteRecipe);
         log.info("Added recipe {} to favorites for user {}", recipeId, userId);
 
-        return FavoriteRecipeMapper.toDtoWithRecipe(favoriteRecipe, recipe, recipeMapper);
-    }
-
-    private void ensureRecipeHasImage(Recipe recipe) {
-        if (!StringUtils.hasText(recipe.getImageUrl())) {
-            try {
-                String generatedImageUrl = recipeImageService.generateRecipeImage(
-                        recipe.getTitle(),
-                        recipe.getServingSuggestions());
-
-                if (StringUtils.hasText(generatedImageUrl)) {
-                    recipe.setImageUrl(generatedImageUrl);
-                    recipe.setUpdatedAt(LocalDateTime.now());
-                    recipeRepository.save(recipe);
-                    log.info("Generated image for recipe {}", recipe.getId());
-                }
-            } catch (Exception e) {
-                log.warn("Failed to generate image for recipe {}: {}", recipe.getId(), e.getMessage());
-            }
-        }
+        return FavoriteRecipeMapper.toDtoWithRecipe(savedFavorite, recipe, recipeMapper);
     }
 
     private Recipe findRecipeByIdOrThrow(UUID recipeId) {

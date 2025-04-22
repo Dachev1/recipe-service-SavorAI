@@ -1,10 +1,7 @@
 package dev.idachev.recipeservice.model;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
@@ -13,14 +10,16 @@ import java.util.UUID;
 @Table(name = "recipe_votes", uniqueConstraints = {
     @UniqueConstraint(columnNames = {"user_id", "recipe_id"})
 })
-@Data
-@Builder
+@Getter
+@ToString
+@EqualsAndHashCode(of = {"userId", "recipeId"})
+@Builder(toBuilder = true)
 @NoArgsConstructor
 @AllArgsConstructor
 public class RecipeVote {
     
     @Id
-    @GeneratedValue
+    @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
     
     @Column(name = "user_id", nullable = false)
@@ -33,13 +32,11 @@ public class RecipeVote {
     @Enumerated(EnumType.STRING)
     private VoteType voteType;
     
-    @Column
-    @Builder.Default
-    private LocalDateTime createdAt = LocalDateTime.now();
+    @Column(updatable = false)
+    private LocalDateTime createdAt;
     
     @Column
-    @Builder.Default
-    private LocalDateTime updatedAt = LocalDateTime.now();
+    private LocalDateTime updatedAt;
     
     @PrePersist
     protected void onCreate() {

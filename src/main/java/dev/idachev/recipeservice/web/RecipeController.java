@@ -1,6 +1,6 @@
 package dev.idachev.recipeservice.web;
 
-import dev.idachev.recipeservice.model.RecipeVote;
+import dev.idachev.recipeservice.model.Recipe;
 import dev.idachev.recipeservice.service.RecipeService;
 import dev.idachev.recipeservice.service.VoteService;
 import dev.idachev.recipeservice.user.service.UserService;
@@ -8,7 +8,10 @@ import dev.idachev.recipeservice.web.dto.RecipeRequest;
 import dev.idachev.recipeservice.web.dto.RecipeResponse;
 import dev.idachev.recipeservice.web.dto.SimplifiedRecipeResponse;
 import dev.idachev.recipeservice.web.dto.VoteRequest;
+import dev.idachev.recipeservice.web.mapper.RecipeMapper;
+import dev.idachev.recipeservice.service.RecipeSearchService;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -23,6 +26,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -30,19 +34,13 @@ import org.springframework.web.multipart.MultipartFile;
 import java.util.List;
 import java.util.UUID;
 
-import dev.idachev.recipeservice.exception.ResourceNotFoundException;
-import dev.idachev.recipeservice.exception.ValidationException;
-import dev.idachev.recipeservice.infrastructure.ai.AIService;
-import dev.idachev.recipeservice.mapper.RecipeMapper;
-import dev.idachev.recipeservice.model.Recipe;
-
 /**
  * Controller for recipe management operations.
  * Follows RESTful principles for HTTP methods and status codes.
  * All exceptions are handled by the GlobalExceptionHandler.
  */
 @RestController
-@RequestMapping({"/api/v1/recipes", "/v1/recipes"})
+@RequestMapping("/api/v1/recipes")
 @Slf4j
 @Validated
 @PreAuthorize("isAuthenticated()")
@@ -50,18 +48,20 @@ import dev.idachev.recipeservice.model.Recipe;
 public class RecipeController {
 
     private final RecipeService recipeService;
-    private final UserService userService;
     private final VoteService voteService;
+    private final RecipeMapper recipeMapper;
+    private final RecipeSearchService recipeSearchService;
 
-    public RecipeController(RecipeService recipeService, UserService userService, VoteService voteService) {
+    public RecipeController(RecipeService recipeService, UserService userService, VoteService voteService, RecipeMapper recipeMapper, RecipeSearchService recipeSearchService) {
         this.recipeService = recipeService;
-        this.userService = userService;
         this.voteService = voteService;
+        this.recipeMapper = recipeMapper;
+        this.recipeSearchService = recipeSearchService;
     }
 
     @Operation(summary = "Create recipe with image")
     @ApiResponses({
-            @ApiResponse(responseCode = "201", description = "Recipe created successfully", 
+            @ApiResponse(responseCode = "201", description = "Recipe created successfully",
                     content = @Content(schema = @Schema(implementation = RecipeResponse.class))),
             @ApiResponse(responseCode = "400", description = "Invalid input"),
             @ApiResponse(responseCode = "401", description = "Unauthorized")
@@ -70,16 +70,16 @@ public class RecipeController {
     public ResponseEntity<RecipeResponse> createRecipe(
             @RequestPart("recipe") @Valid RecipeRequest request,
             @RequestPart(value = "image", required = false) MultipartFile image,
-            @RequestHeader("Authorization") String token) {
-        
-        UUID userId = userService.getUserIdFromToken(token);
+            @Parameter(hidden = true) @AuthenticationPrincipal UUID userId) {
+        log.debug("Entering createRecipe (multipart): userId={}", userId);
         RecipeResponse createdRecipe = recipeService.createRecipe(request, image, userId);
+        log.debug("Exiting createRecipe (multipart): createdRecipeId={}, userId={}", createdRecipe.id(), userId);
         return ResponseEntity.status(HttpStatus.CREATED).body(createdRecipe);
     }
 
     @Operation(summary = "Create recipe (JSON only)")
     @ApiResponses({
-            @ApiResponse(responseCode = "201", description = "Recipe created successfully", 
+            @ApiResponse(responseCode = "201", description = "Recipe created successfully",
                     content = @Content(schema = @Schema(implementation = RecipeResponse.class))),
             @ApiResponse(responseCode = "400", description = "Invalid input"),
             @ApiResponse(responseCode = "401", description = "Unauthorized")
@@ -87,16 +87,16 @@ public class RecipeController {
     @PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<RecipeResponse> createRecipeJson(
             @Valid @RequestBody RecipeRequest request,
-            @RequestHeader("Authorization") String token) {
-        
-        UUID userId = userService.getUserIdFromToken(token);
-        RecipeResponse createdRecipe = recipeService.createRecipe(request, userId);
+            @Parameter(hidden = true) @AuthenticationPrincipal UUID userId) {
+        log.debug("Entering createRecipeJson: userId={}", userId);
+        RecipeResponse createdRecipe = recipeService.createRecipe(request, null, userId);
+        log.debug("Exiting createRecipeJson: createdRecipeId={}, userId={}", createdRecipe.id(), userId);
         return ResponseEntity.status(HttpStatus.CREATED).body(createdRecipe);
     }
 
     @Operation(summary = "Get recipe by ID")
     @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Recipe found", 
+            @ApiResponse(responseCode = "200", description = "Recipe found",
                     content = @Content(schema = @Schema(implementation = RecipeResponse.class))),
             @ApiResponse(responseCode = "404", description = "Recipe not found"),
             @ApiResponse(responseCode = "401", description = "Unauthorized")
@@ -104,15 +104,16 @@ public class RecipeController {
     @GetMapping("/{id}")
     public ResponseEntity<RecipeResponse> getRecipeById(
             @PathVariable UUID id,
-            @RequestHeader("Authorization") String token) {
-        
-        UUID userId = userService.getUserIdFromToken(token);
-        return ResponseEntity.ok(recipeService.getRecipeById(id, userId));
+            @Parameter(hidden = true) @AuthenticationPrincipal UUID userId) {
+        log.debug("Entering getRecipeById: id={}, userId={}", id, userId);
+        RecipeResponse recipe = recipeService.getRecipeById(id, userId);
+        log.debug("Exiting getRecipeById: id={}, userId={}", id, userId);
+        return ResponseEntity.ok(recipe);
     }
 
     @Operation(summary = "Get all recipes")
     @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Recipes returned successfully", 
+            @ApiResponse(responseCode = "200", description = "Recipes returned successfully",
                     content = @Content(schema = @Schema(implementation = Page.class))),
             @ApiResponse(responseCode = "401", description = "Unauthorized")
     })
@@ -120,74 +121,54 @@ public class RecipeController {
     public ResponseEntity<Page<RecipeResponse>> getAllRecipes(
             Pageable pageable,
             @RequestParam(required = false, defaultValue = "false") boolean showPersonal,
-            @RequestHeader("Authorization") String token) {
-        
-        UUID userId = userService.getUserIdFromToken(token);
-        return ResponseEntity.ok(recipeService.getAllRecipes(pageable, userId, showPersonal));
+            @Parameter(hidden = true) @AuthenticationPrincipal UUID userId) {
+        log.debug("Entering getAllRecipes: pageable={}, showPersonal={}, userId={}", pageable, showPersonal, userId);
+        Page<RecipeResponse> recipes;
+        if (showPersonal) {
+            recipes = recipeSearchService.getAllRecipes(pageable, userId);
+        } else {
+            recipes = recipeSearchService.getAllRecipesExcludingUser(pageable, userId);
+        }
+        log.debug("Exiting getAllRecipes: userId={}, pageNumber={}, pageSize={}, results={}",
+                userId, pageable.getPageNumber(), pageable.getPageSize(), recipes.getNumberOfElements());
+        return ResponseEntity.ok(recipes);
     }
 
     @Operation(summary = "Get user's recipes")
     @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "User recipes retrieved", 
-                    content = @Content(schema = @Schema(implementation = RecipeResponse.class))),
+            @ApiResponse(responseCode = "200", description = "User recipes retrieved",
+                    content = @Content(schema = @Schema(implementation = List.class))),
             @ApiResponse(responseCode = "401", description = "Unauthorized")
     })
     @GetMapping("/my-recipes")
-    public ResponseEntity<List<RecipeResponse>> getMyRecipes(@RequestHeader("Authorization") String token) {
-        UUID userId = userService.getUserIdFromToken(token);
-        return ResponseEntity.ok(recipeService.getRecipesByUserId(userId));
+    public ResponseEntity<List<RecipeResponse>> getMyRecipes(
+            @Parameter(hidden = true) @AuthenticationPrincipal UUID userId) {
+        log.debug("Entering getMyRecipes: userId={}", userId);
+        List<RecipeResponse> recipes = recipeService.getRecipesByUserId(userId);
+        log.debug("Exiting getMyRecipes: userId={}, count={}", userId, recipes.size());
+        return ResponseEntity.ok(recipes);
     }
 
     @Operation(summary = "Get recipe feed sorted by newest first")
     @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Recipe feed retrieved", 
-                    content = @Content(schema = @Schema(implementation = RecipeResponse.class))),
+            @ApiResponse(responseCode = "200", description = "Recipe feed retrieved",
+                    content = @Content(schema = @Schema(implementation = Page.class))),
             @ApiResponse(responseCode = "401", description = "Unauthorized")
     })
     @GetMapping("/feed")
     public ResponseEntity<Page<RecipeResponse>> getRecipeFeed(
-            @RequestHeader("Authorization") String token,
+            @Parameter(hidden = true) @AuthenticationPrincipal UUID userId,
             Pageable pageable) {
-        UUID userId = userService.getUserIdFromToken(token);
-        return ResponseEntity.ok(recipeService.getRecipeFeed(userId, pageable));
-    }
-
-    @Operation(summary = "Debug endpoint to get recipe with author info")
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Recipe with debug info retrieved"),
-            @ApiResponse(responseCode = "404", description = "Recipe not found"),
-            @ApiResponse(responseCode = "401", description = "Unauthorized")
-    })
-    @GetMapping("/debug/{id}")
-    public ResponseEntity<RecipeResponse> getRecipeWithDebugInfo(
-            @PathVariable UUID id,
-            @RequestHeader("Authorization") String token) {
-        UUID userId = userService.getUserIdFromToken(token);
-        RecipeResponse response = recipeService.getRecipeById(id, userId);
-        
-        // Try to fix missing username if needed
-        if (response.getCreatedById() != null && 
-            ("Unknown User".equals(response.getAuthorName()) || response.getAuthorName() == null)) {
-            
-            try {
-                // Direct API call attempt
-                String username = userService.getUsernameById(response.getCreatedById());
-                if (username != null && !"Unknown User".equals(username)) {
-                    response.setUsername(username);
-                    response.setAuthorName(username);
-                    log.debug("DEBUG - Fixed username via API: {}", username);
-                }
-            } catch (Exception e) {
-                log.warn("DEBUG - API username lookup failed for recipe {}", id);
-            }
-        }
-        
-        return ResponseEntity.ok(response);
+        log.debug("Entering getRecipeFeed: pageable={}, userId={}", pageable, userId);
+        Page<RecipeResponse> feed = recipeService.getRecipeFeed(userId, pageable);
+        log.debug("Exiting getRecipeFeed: userId={}, pageNumber={}, pageSize={}, results={}",
+                userId, pageable.getPageNumber(), pageable.getPageSize(), feed.getNumberOfElements());
+        return ResponseEntity.ok(feed);
     }
 
     @Operation(summary = "Update recipe")
     @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Recipe updated successfully", 
+            @ApiResponse(responseCode = "200", description = "Recipe updated successfully",
                     content = @Content(schema = @Schema(implementation = RecipeResponse.class))),
             @ApiResponse(responseCode = "400", description = "Invalid input"),
             @ApiResponse(responseCode = "404", description = "Recipe not found"),
@@ -198,15 +179,16 @@ public class RecipeController {
     public ResponseEntity<RecipeResponse> updateRecipe(
             @PathVariable UUID id,
             @Valid @RequestBody RecipeRequest request,
-            @RequestHeader("Authorization") String token) {
-        
-        UUID userId = userService.getUserIdFromToken(token);
-        return ResponseEntity.ok(recipeService.updateRecipe(id, request, userId));
+            @Parameter(hidden = true) @AuthenticationPrincipal UUID userId) {
+        log.debug("Entering updateRecipe: id={}, userId={}", id, userId);
+        RecipeResponse updatedRecipe = recipeService.updateRecipe(id, request, userId);
+        log.debug("Exiting updateRecipe: id={}, userId={}", id, userId);
+        return ResponseEntity.ok(updatedRecipe);
     }
 
     @Operation(summary = "Update recipe with image")
     @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Recipe updated successfully", 
+            @ApiResponse(responseCode = "200", description = "Recipe updated successfully",
                     content = @Content(schema = @Schema(implementation = RecipeResponse.class))),
             @ApiResponse(responseCode = "400", description = "Invalid input"),
             @ApiResponse(responseCode = "404", description = "Recipe not found"),
@@ -218,10 +200,11 @@ public class RecipeController {
             @PathVariable UUID id,
             @RequestPart("recipe") @Valid RecipeRequest request,
             @RequestPart(value = "image", required = false) MultipartFile image,
-            @RequestHeader("Authorization") String token) {
-        
-        UUID userId = userService.getUserIdFromToken(token);
-        return ResponseEntity.ok(recipeService.updateRecipe(id, request, image, userId));
+            @Parameter(hidden = true) @AuthenticationPrincipal UUID userId) {
+        log.debug("Entering updateRecipeWithImage: id={}, userId={}", id, userId);
+        RecipeResponse updatedRecipe = recipeService.updateRecipe(id, request, image, userId);
+        log.debug("Exiting updateRecipeWithImage: id={}, userId={}", id, userId);
+        return ResponseEntity.ok(updatedRecipe);
     }
 
     @Operation(summary = "Delete recipe")
@@ -234,16 +217,16 @@ public class RecipeController {
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteRecipe(
             @PathVariable UUID id,
-            @RequestHeader("Authorization") String token) {
-        
-        UUID userId = userService.getUserIdFromToken(token);
+            @Parameter(hidden = true) @AuthenticationPrincipal UUID userId) {
+        log.debug("Entering deleteRecipe: id={}, userId={}", id, userId);
         recipeService.deleteRecipe(id, userId);
+        log.debug("Exiting deleteRecipe: id={}, userId={}", id, userId);
         return ResponseEntity.noContent().build();
     }
 
     @Operation(summary = "Search recipes")
     @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Search results returned", 
+            @ApiResponse(responseCode = "200", description = "Search results returned",
                     content = @Content(schema = @Schema(implementation = Page.class))),
             @ApiResponse(responseCode = "401", description = "Unauthorized")
     })
@@ -251,15 +234,17 @@ public class RecipeController {
     public ResponseEntity<Page<RecipeResponse>> searchRecipes(
             @RequestParam String keyword,
             Pageable pageable,
-            @RequestHeader("Authorization") String token) {
-        
-        UUID userId = userService.getUserIdFromToken(token);
-        return ResponseEntity.ok(recipeService.searchRecipes(keyword, pageable, userId));
+            @Parameter(hidden = true) @AuthenticationPrincipal UUID userId) {
+        log.debug("Entering searchRecipes: keyword={}, pageable={}, userId={}", keyword, pageable, userId);
+        Page<RecipeResponse> results = recipeSearchService.searchRecipes(keyword, pageable, userId);
+        log.debug("Exiting searchRecipes: keyword={}, userId={}, pageNumber={}, pageSize={}, results={}",
+                keyword, userId, pageable.getPageNumber(), pageable.getPageSize(), results.getNumberOfElements());
+        return ResponseEntity.ok(results);
     }
 
     @Operation(summary = "Vote on a recipe")
     @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Vote submitted successfully", 
+            @ApiResponse(responseCode = "200", description = "Vote submitted successfully",
                     content = @Content(schema = @Schema(implementation = RecipeResponse.class))),
             @ApiResponse(responseCode = "400", description = "Invalid input"),
             @ApiResponse(responseCode = "404", description = "Recipe not found"),
@@ -270,38 +255,26 @@ public class RecipeController {
     public ResponseEntity<RecipeResponse> voteRecipe(
             @PathVariable UUID id,
             @Valid @RequestBody VoteRequest request,
-            @RequestHeader("Authorization") String token) {
-        
-        log.debug("Vote request received: recipeId={}, voteType={}", id, request.getVoteType());
-        
-        UUID userId = userService.getUserIdFromToken(token);
-        log.debug("Extracted userId: {}", userId);
-        
-        RecipeVote.VoteType voteType = "up".equalsIgnoreCase(request.getVoteType()) 
-                ? RecipeVote.VoteType.UPVOTE 
-                : RecipeVote.VoteType.DOWNVOTE;
-        
-        log.debug("Mapped vote type: {}", voteType);
-                
-        try {
-            Recipe updatedRecipe = voteService.vote(id, voteType, userId);
-            log.debug("Vote processed successfully, new upvotes: {}, downvotes: {}", 
-                    updatedRecipe.getUpvotes(), updatedRecipe.getDownvotes());
-            
-            RecipeResponse response = recipeService.toResponse(updatedRecipe, userId);
-            log.debug("Response prepared, upvotes: {}, downvotes: {}, userVote: {}", 
-                    response.getUpvotes(), response.getDownvotes(), response.getUserVote());
-                    
-            return ResponseEntity.ok(response);
-        } catch (Exception e) {
-            log.error("Error processing vote: {}", e.getMessage(), e);
-            throw e;
-        }
+            @Parameter(hidden = true) @AuthenticationPrincipal UUID userId) {
+
+        log.debug("Entering voteRecipe: recipeId={}, voteType={}, userId={}", id, request.voteType(), userId);
+
+        // Call vote service - it returns the updated Recipe entity
+        Recipe updatedRecipeEntity = voteService.vote(id, request, userId);
+
+        // 1. Map the updated entity to the base response DTO
+        RecipeResponse baseResponseDto = recipeMapper.toResponse(updatedRecipeEntity);
+        // 2. Enhance the response DTO with user-specific interactions
+        RecipeResponse enhancedResponseDto = recipeService.enhanceWithUserInteractions(baseResponseDto, userId);
+
+        log.debug("Exiting voteRecipe: recipeId={}, userId={}", id, userId);
+        // Return the final enhanced DTO
+        return ResponseEntity.ok(enhancedResponseDto);
     }
 
     @Operation(summary = "Generate recipe from ingredients")
     @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Recipe generated", 
+            @ApiResponse(responseCode = "200", description = "Recipe generated",
                     content = @Content(schema = @Schema(implementation = SimplifiedRecipeResponse.class))),
             @ApiResponse(responseCode = "400", description = "Invalid input - empty ingredients list"),
             @ApiResponse(responseCode = "401", description = "Unauthorized"),
@@ -310,12 +283,15 @@ public class RecipeController {
     @PostMapping("/generate")
     public ResponseEntity<SimplifiedRecipeResponse> generateMeal(
             @RequestBody @NotEmpty(message = "Ingredients list cannot be empty") List<String> ingredients) {
-        return ResponseEntity.ok(recipeService.generateMeal(ingredients));
+        log.debug("Entering generateMeal: ingredientsCount={}", ingredients.size());
+        SimplifiedRecipeResponse generatedRecipe = recipeService.generateMeal(ingredients);
+        log.debug("Exiting generateMeal");
+        return ResponseEntity.ok(generatedRecipe);
     }
 
     @Operation(summary = "Save generated recipe")
     @ApiResponses({
-            @ApiResponse(responseCode = "201", description = "Recipe saved", 
+            @ApiResponse(responseCode = "201", description = "Recipe saved",
                     content = @Content(schema = @Schema(implementation = RecipeResponse.class))),
             @ApiResponse(responseCode = "400", description = "Invalid input"),
             @ApiResponse(responseCode = "401", description = "Unauthorized")
@@ -323,10 +299,10 @@ public class RecipeController {
     @PostMapping("/save")
     public ResponseEntity<RecipeResponse> saveGeneratedRecipe(
             @Valid @RequestBody RecipeRequest request,
-            @RequestHeader("Authorization") String token) {
-        
-        UUID userId = userService.getUserIdFromToken(token);
+            @Parameter(hidden = true) @AuthenticationPrincipal UUID userId) {
+        log.debug("Entering saveGeneratedRecipe: userId={}", userId);
         RecipeResponse savedRecipe = recipeService.createRecipe(request, userId);
+        log.debug("Exiting saveGeneratedRecipe: savedRecipeId={}, userId={}", savedRecipe.id(), userId);
         return ResponseEntity.status(HttpStatus.CREATED).body(savedRecipe);
     }
 } 

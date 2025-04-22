@@ -7,8 +7,11 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestHeader;
+import org.springframework.web.bind.annotation.RequestParam;
 
 import java.util.UUID;
+import java.util.Set;
+import java.util.Map;
 
 /**
  * Client interface for communicating with the user service.
@@ -29,10 +32,10 @@ public interface UserClient {
     ResponseEntity<UserDTO> getCurrentUser(@RequestHeader("Authorization") String token);
 
     /**
-     * Get user by ID without authentication - internal service communication.
+     * Get user by ID without authentication token - internal service communication.
      */
     @GetMapping("/api/v1/users/{id}")
-    ResponseEntity<UserDTO> getUserById(@PathVariable("id") UUID userId);
+    ResponseEntity<UserDTO> findUserByIdInternal(@PathVariable("id") UUID userId);
     
     /**
      * Get current user profile with complete information.
@@ -51,4 +54,12 @@ public interface UserClient {
      */
     @GetMapping("/api/v1/users/{id}/username")
     ResponseEntity<String> getUsernameById(@PathVariable("id") UUID userId);
+
+    /**
+     * Get usernames for a set of user IDs - Bulk endpoint.
+     * TODO: Ensure this endpoint exists in the User Service.
+     * Expected to return a Map<UUID, String> or similar structure.
+     */
+    @GetMapping("/api/v1/users/usernames")
+    ResponseEntity<Map<UUID, String>> getUsernamesByIds(@RequestParam("userIds") Set<UUID> userIds);
 } 

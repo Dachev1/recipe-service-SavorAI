@@ -6,17 +6,26 @@ import dev.idachev.recipeservice.exception.UnauthorizedException;
 import dev.idachev.recipeservice.user.client.UserClient;
 import dev.idachev.recipeservice.user.dto.UserDTO;
 import dev.idachev.recipeservice.user.dto.UserResponse;
+import feign.FeignException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
+import org.springframework.cache.annotation.Cacheable;
 
-import java.util.Objects;
+import java.util.Collections;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
+import java.util.HashMap;
+import java.util.stream.Collectors;
 
 /**
- * Service for user authentication and identity management
+ * Service for interacting with the external User Service.
+ * TODO: Review consistency of using UserDTO vs UserResponse. Ensure correct DTO is used based on required detail level.
  */
 @Service
 @Slf4j
@@ -30,330 +39,276 @@ public class UserService {
     }
 
     /**
-     * Get a username by user ID
+     * Get usernames for a set of user IDs.
+     * TODO: Implement corresponding bulk endpoint in User Service & UserClient
+     * TODO: Remove placeholder implementation once bulk endpoint is available.
      * 
-     * @param userId The ID of the user
-     * @return The username of the user
+     * @param userIds Set of user IDs.
+     * @return Map of userId to username. Returns empty map until bulk endpoint is implemented.
      */
+    public Map<UUID, String> getUsernamesByIds(Set<UUID> userIds) {
+        if (userIds == null || userIds.isEmpty()) {
+            return Collections.emptyMap();
+        }
+        
+        // --- Placeholder Implementation --- 
+        // Return empty map until the actual bulk endpoint is available in User Service / UserClient
+        log.warn("getUsernamesByIds: Bulk fetching not implemented. Returning empty map. Implement bulk endpoint in User Service!");
+        return Collections.emptyMap(); 
+        // --- End Placeholder Implementation ---
+
+        /* --- Target Implementation (when UserClient.getUsernamesByIds exists) --- 
+        log.debug("Fetching usernames for {} user IDs", userIds.size());
+        try {
+            ResponseEntity<Map<UUID, String>> response = userClient.getUsernamesByIds(userIds);
+            if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
+                log.info("Successfully fetched {} usernames", response.getBody().size());
+                return response.getBody();
+            } else {
+                log.error("Failed to fetch usernames for IDs. Status: {}, Body: {}", response.getStatusCode(), response.getBody());
+                // Return empty map or map with defaults?
+                return Collections.emptyMap(); 
+            }
+        } catch (FeignException e) {
+            log.error("Error fetching usernames for IDs {}: {}", userIds, e.getMessage(), e);
+            // Return empty map or map with defaults?
+            return Collections.emptyMap(); 
+        }
+        */
+    }
+
+    @Cacheable(value = "userNames", key = "#userId")
     public String getUsernameById(UUID userId) {
         if (userId == null) {
-            return "Unknown User";
+             log.warn("Attempted to get username for null userId");
+             throw new IllegalArgumentException("User ID cannot be null when fetching username.");
         }
-        
+        log.debug("Fetching username for user ID: {}", userId);
         try {
-            // Try the lightweight endpoint first
-            ResponseEntity<String> usernameResponse = userClient.getUsernameById(userId);
-            if (usernameResponse != null && usernameResponse.getBody() != null) {
-                return usernameResponse.getBody();
+            ResponseEntity<String> response = userClient.getUsernameById(userId);
+            if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
+                log.info("Successfully fetched username for user ID: {}", userId);
+                return response.getBody();
+            } else {
+                log.error("Failed to fetch username for user ID {}. Status: {}, Body: {}", userId, response.getStatusCode(), response.getBody());
+                // Consider if 404 should be ResourceNotFound or just return null/empty?
+                // Throwing exception aligns with other methods.
+                throw new ResourceNotFoundException("Username not found for user ID: " + userId);
             }
-            
-            // Fall back to regular endpoint
-            ResponseEntity<UserDTO> response = userClient.getUserById(userId);
-            if (response != null && response.getBody() != null) {
-                return response.getBody().getUsername();
+        } catch (FeignException e) {
+            log.error("Error fetching username for user ID {}: {}", userId, e.getMessage(), e);
+            if (e.status() == HttpStatus.NOT_FOUND.value()) {
+                throw new ResourceNotFoundException("User not found with ID: " + userId, e);
             }
-            
-            // Try security context as last resort
-            Object principal = org.springframework.security.core.context.SecurityContextHolder
-                .getContext().getAuthentication().getPrincipal();
-            if (principal instanceof String) {
-                String username = (String) principal;
-                if (UUID.nameUUIDFromBytes(username.getBytes()).equals(userId)) {
-                    return username;
-                }
-            }
-        } catch (Exception e) {
-            log.warn("Error retrieving username for user ID {}: {}", userId, e.getMessage());
+            throw new FeignClientException("User service unavailable while fetching username for ID: " + userId, e);
         }
-        
-        return "Unknown User";
     }
 
-    /**
-     * Get current user information based on the JWT token.
-     *
-     * @param token JWT token for authentication
-     * @return Current user data
-     * @throws UnauthorizedException if token is invalid
-     * @throws FeignClientException  if communication with user-service fails
-     */
+    // TODO: Review caching strategy for token-based lookups.
+    // Caching based solely on the token might be unsafe if tokens are short-lived or easily invalidated.
+    // Consider caching based on userId extracted *from* the token (more complex) or using appropriate TTL.
+    @Cacheable(value = "currentUser", key = "#token")
     public UserDTO getCurrentUser(String token) {
-        validateTokenFormat(token);
-        
-        log.debug("Making request to user-service with token: Bearer ***");
+        // TODO: Implement caching for getCurrentUser
+        log.debug("Fetching current user with token");
         try {
-            // Add specific token structure check for debugging
-            String tokenValue = token.substring(7);
-            String[] parts = tokenValue.split("\\.");
-            if (parts.length != 3) {
-                log.warn("Token being sent to user-service has invalid structure: parts={}", parts.length);
-            }
-            
             ResponseEntity<UserDTO> response = userClient.getCurrentUser(token);
-            
-            if (response == null) {
-                log.warn("User service returned null response");
-                throw new UnauthorizedException("Invalid authentication response");
+            if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
+                log.info("Successfully fetched current user");
+                return response.getBody();
+            } else {
+                log.error("Failed to fetch current user. Status: {}, Body: {}", response.getStatusCode(), response.getBody());
+                throw new ResourceNotFoundException("Current user not found.");
             }
-
-            if (response.getBody() == null) {
-                log.warn("User service returned null body");
-                throw new UnauthorizedException("Invalid authentication token");
+        } catch (FeignException e) {
+            log.error("Error fetching current user: {}", e.getMessage(), e);
+            if (e.status() == HttpStatus.UNAUTHORIZED.value()) {
+                throw new UnauthorizedException("Unauthorized: Invalid or expired token.", e);
             }
-
-            log.debug("Successfully retrieved user information for username: {}", 
-                     response.getBody().getUsername());
-            return response.getBody();
-        } catch (FeignClientException e) {
-            log.error("Error from user-service: {}", e.getMessage());
-            throw e;
-        } catch (Exception e) {
-            log.error("Error authenticating user: {}", e.getMessage(), e);
-            throw new UnauthorizedException("Authentication failed: " + e.getMessage());
+            // Throw FeignClientException here
+            throw new FeignClientException("User service unavailable", e);
         }
     }
 
-    /**
-     * Get user by ID.
-     *
-     * @param userId User ID to retrieve
-     * @return User data
-     * @throws ResourceNotFoundException if user not found
-     * @throws FeignClientException if communication with user-service fails
-     */
-    public UserDTO getUserById(UUID userId) {
-        if (userId == null) {
-            throw new IllegalArgumentException("User ID cannot be null");
-        }
-
+    @Cacheable(value = "usersById", key = "#userId")
+    public UserDTO getUserById(String token, UUID userId) {
+        // TODO: Implement caching for getUserById
+        // TODO: Consider if fetching username separately via getUsernameById is needed often
+        log.debug("Fetching user by ID: {}", userId);
         try {
-            ResponseEntity<UserDTO> response = userClient.getUserById(userId);
-
-            if (response.getBody() == null) {
+            ResponseEntity<UserDTO> response = userClient.getUserById(token, userId);
+            if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
+                log.info("Successfully fetched user by ID: {}", userId);
+                return response.getBody();
+            } else {
+                log.error("Failed to fetch user by ID {}. Status: {}, Body: {}", userId, response.getStatusCode(), response.getBody());
                 throw new ResourceNotFoundException("User not found with ID: " + userId);
             }
-
-            return response.getBody();
-        } catch (FeignClientException e) {
-            log.error("Error from user-service: {}", e.getMessage());
-            throw e;
-        } catch (ResourceNotFoundException e) {
-            throw e;
-        } catch (Exception e) {
-            log.error("Error retrieving user with ID {}: {}", userId, e.getMessage());
-            throw new FeignClientException("Failed to retrieve user: " + e.getMessage());
+        } catch (FeignException e) {
+            log.error("Error fetching user by ID {}: {}", userId, e.getMessage(), e);
+            if (e.status() == HttpStatus.UNAUTHORIZED.value()) {
+                throw new UnauthorizedException("Unauthorized access attempt for user ID: " + userId, e);
+            }
+            if (e.status() == HttpStatus.NOT_FOUND.value()) {
+                throw new ResourceNotFoundException("User not found with ID: " + userId, e);
+            }
+            // Throw FeignClientException here
+            throw new FeignClientException("User service unavailable", e);
         }
     }
 
     /**
-     * Validate token format before making API calls
+     * Retrieves the full user profile for the currently authenticated user.
+     *
+     * @param token The authorization token.
+     * @return UserResponse containing the full user profile.
+     * @throws UnauthorizedException if the token is invalid or expired.
+     * @throws FeignClientException if communication with the user service fails.
      */
-    private void validateTokenFormat(String token) {
-        if (!StringUtils.hasText(token)) {
-            log.error("Authorization token is missing or empty");
-            throw new UnauthorizedException("Authorization token is missing or empty");
-        }
-
-        if (!token.startsWith("Bearer ")) {
-            log.error("Invalid token format: '{}' does not start with 'Bearer '", 
-                    token.length() > 10 ? token.substring(0, 10) + "..." : token);
-            throw new UnauthorizedException("Invalid token format: must start with 'Bearer '");
-        }
-        
-        log.debug("Token format validated successfully");
-    }
-
-    /**
-     * Get user ID from token
-     */
-    public UUID getUserIdFromToken(String token, String action) {
-        validateTokenFormat(token);
-        
-        // First check if we already have an authenticated user in the security context
+    public UserResponse getAuthenticatedUserResponse(String token) {
+        log.debug("Fetching authenticated user profile");
         try {
-            Object principal = org.springframework.security.core.context.SecurityContextHolder
-                    .getContext().getAuthentication().getPrincipal();
-            Object credentials = org.springframework.security.core.context.SecurityContextHolder
-                    .getContext().getAuthentication().getCredentials();
-            
-            // If credentials is a UUID, it's our user ID
-            if (credentials instanceof UUID) {
-                UUID userId = (UUID) credentials;
-                log.info("Found user ID from security context: {}", userId);
-                return userId;
-            }
-            
-            // If principal is a username, we can derive a consistent UUID
-            if (principal instanceof String) {
-                String username = (String) principal;
-                log.info("Found username from security context: {}", username);
-                return UUID.nameUUIDFromBytes(username.getBytes());
-            }
-        } catch (Exception e) {
-            log.debug("Could not get user from security context: {}", e.getMessage());
-        }
-        
-        // Next try direct token extraction via JwtUtil
-        try {
-            String tokenValue = token.substring(7); // Remove "Bearer " prefix
-            UUID userId = extractUserIdFromRawToken(tokenValue);
-            if (userId != null) {
-                log.info("Extracted user ID directly from token: {}", userId);
-                return userId;
-            }
-        } catch (Exception e) {
-            log.debug("Could not extract userId directly from token: {}", e.getMessage());
-        }
-        
-        // If direct extraction fails, try the current-user endpoint
-        try {
-            log.debug("Attempting to get user info from current-user endpoint");
-            UserDTO user = getCurrentUser(token);
-            if (user != null && StringUtils.hasText(user.getUsername())) {
-                String username = user.getUsername();
-                log.info("User {} {}", username, action);
-                // Since UserDTO doesn't have ID, generate from username - SAME algorithm as user-service
-                return UUID.nameUUIDFromBytes(username.getBytes());
+            ResponseEntity<UserResponse> response = userClient.getCurrentUserProfile(token);
+            if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
+                log.info("Successfully fetched authenticated user profile");
+                return response.getBody();
             } else {
-                log.warn("Retrieved user was null or had empty username");
+                log.error("Failed to fetch authenticated user profile. Status: {}, Body: {}", response.getStatusCode(), response.getBody());
+                // Throw FeignClientException here for non-2xx success responses
+                throw new FeignClientException("Failed to retrieve authenticated user profile. Status: " + response.getStatusCode());
             }
-        } catch (Exception e) {
-            log.error("Error authenticating user: {}", e.getMessage(), e);
-        }
-        
-        // If current-user failed, try the profile endpoint as fallback
-        try {
-            log.debug("Attempting to get user info from profile endpoint");
-            ResponseEntity<UserResponse> userResponse = userClient.getCurrentUserProfile(token);
-            if (userResponse.getBody() != null && userResponse.getBody().getId() != null) {
-                UUID userId = userResponse.getBody().getId();
-                log.debug("Fallback - User {} (ID: {}) {}", userResponse.getBody().getUsername(), userId, action);
-                return userId;
-            } else {
-                log.warn("Profile endpoint returned null response or null ID");
+        } catch (FeignException e) {
+            log.error("Error fetching authenticated user profile: {}", e.getMessage(), e);
+            if (e.status() == HttpStatus.UNAUTHORIZED.value()) {
+                throw new UnauthorizedException("Unauthorized: Invalid or expired token.", e);
             }
-        } catch (Exception e) {
-            log.error("Error extracting user ID from token: {}", e.getMessage(), e);
+            // Throw FeignClientException here
+            throw new FeignClientException("User service unavailable while fetching profile", e);
         }
-        
-        // Last resort fallback to anonymous ID - use SAME algorithm as user-service
-        String anonymousUser = "anonymous";
-        log.error("Complete failure to get user ID, using anonymous ID: {}", 
-                  UUID.nameUUIDFromBytes(anonymousUser.getBytes()));
-        return UUID.nameUUIDFromBytes(anonymousUser.getBytes());
     }
 
-    /**
-     * Helper method to extract user ID directly from a raw JWT token
-     */
-    private UUID extractUserIdFromRawToken(String token) {
-        try {
-            // Use Spring utilities to parse and extract from JWT token
-            String[] chunks = token.split("\\.");
-            if (chunks.length >= 2) {
-                String payload = new String(java.util.Base64.getUrlDecoder().decode(chunks[1]));
-                
-                log.debug("Token payload: {}", payload);
-                
-                // First check for standard format with quoted userId (most common)
-                if (payload.contains("\"userId\"")) {
-                    int start = payload.indexOf("\"userId\"") + 9; // "userId":
-                    // Find the actual value, accounting for quotes
-                    start = payload.indexOf(":", start) + 1;
-                    // Skip any whitespace
-                    while (start < payload.length() && Character.isWhitespace(payload.charAt(start))) {
-                        start++;
-                    }
-                    
-                    boolean isQuoted = start < payload.length() && payload.charAt(start) == '"';
-                    if (isQuoted) start++; // Skip the opening quote
-                    
-                    int end;
-                    if (isQuoted) {
-                        end = payload.indexOf("\"", start);
-                    } else {
-                        end = payload.indexOf(",", start);
-                        if (end == -1) end = payload.indexOf("}", start);
-                    }
-                    
-                    if (end > start) {
-                        String userIdStr = payload.substring(start, end);
-                        log.info("Extracted raw userId from token: {}", userIdStr);
-                        return UUID.fromString(userIdStr);
-                    }
-                }
-                
-                // Fallback approach - try to find sub claim which sometimes contains the ID
-                if (payload.contains("\"sub\"")) {
-                    int start = payload.indexOf("\"sub\"") + 6; // "sub":
-                    start = payload.indexOf(":", start) + 1;
-                    while (start < payload.length() && Character.isWhitespace(payload.charAt(start))) {
-                        start++;
-                    }
-                    
-                    boolean isQuoted = start < payload.length() && payload.charAt(start) == '"';
-                    if (isQuoted) start++; // Skip the opening quote
-                    
-                    int end;
-                    if (isQuoted) {
-                        end = payload.indexOf("\"", start);
-                    } else {
-                        end = payload.indexOf(",", start);
-                        if (end == -1) end = payload.indexOf("}", start);
-                    }
-                    
-                    if (end > start) {
-                        String subValue = payload.substring(start, end);
-                        log.info("Extracted sub from token: {}", subValue);
-                        // If it's a UUID, use it directly
-                        try {
-                            return UUID.fromString(subValue);
-                        } catch (IllegalArgumentException e) {
-                            // If not a UUID, generate a consistent UUID from the username
-                            return UUID.nameUUIDFromBytes(subValue.getBytes());
-                        }
-                    }
-                }
-            }
-        } catch (Exception e) {
-            log.debug("Failed to extract userId from token: {}", e.getMessage());
-        }
-        return null;
-    }
-
-    /**
-     * Get user ID from authorization token without action logging
-     */
-    public UUID getUserIdFromToken(String token) {
-        return getUserIdFromToken(token, "requesting resource");
-    }
-
-    /**
-     * Validate token without returning user information
-     */
-    public void validateToken(String token) {
-        getCurrentUser(token);
-    }
-
-    /**
-     * Get user ID from username
-     */
-    public UUID getUserIdFromUsername(String username) {
-        if (username == null || username.isEmpty()) {
-            throw new IllegalArgumentException("Username cannot be null or empty");
-        }
-        
+    @Cacheable(value = "userResponseByUsername", key = "#username")
+    public UserResponse getUserResponseByUsername(String username) {
+        // TODO: Add authorization check if necessary? Or assume public profiles?
+        // TODO: Implement caching for getUserResponseByUsername
+        log.debug("Fetching user profile by username: {}", username);
         try {
             ResponseEntity<UserResponse> response = userClient.getUserProfileByUsername(username);
-            if (response.getBody() != null && response.getBody().getId() != null) {
-                return response.getBody().getId();
+            if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
+                log.info("Successfully fetched user profile for username: {}", username);
+                return response.getBody();
+            } else {
+                log.error("Failed to fetch user profile for username {}. Status: {}, Body: {}", username, response.getStatusCode(), response.getBody());
+                throw new ResourceNotFoundException("User profile not found for username: " + username);
             }
-        } catch (Exception e) {
-            log.error("Error retrieving user ID for username {}: {}", username, e.getMessage());
+        } catch (FeignException e) {
+            log.error("Error fetching user profile for username {}: {}", username, e.getMessage(), e);
+            if (e.status() == HttpStatus.NOT_FOUND.value()) {
+                throw new ResourceNotFoundException("User profile not found for username: " + username, e);
+            }
+            // Throw FeignClientException here
+            throw new FeignClientException("User service unavailable while fetching profile for username: " + username, e);
         }
-        
-        // Fallback to deterministic UUID if user service fails
-        log.warn("Falling back to deterministic UUID generation for username: {}", username);
-        return UUID.nameUUIDFromBytes(username.getBytes());
+    }
+
+    /**
+     * Retrieves the user ID associated with a given username.
+     *
+     * @param username The username to look up.
+     * @return The UUID of the user.
+     * @throws ResourceNotFoundException if the username is not found.
+     * @throws FeignClientException if communication with the user service fails.
+     */
+    public UUID getUserIdFromUsername(String username) {
+        log.debug("Fetching user ID for username: {}", username);
+        try {
+            ResponseEntity<UserResponse> response = userClient.getUserProfileByUsername(username);
+            if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null && response.getBody().getId() != null) {
+                log.info("Successfully fetched user ID for username: {}", username);
+                return response.getBody().getId();
+            } else {
+                log.error("Failed to fetch user ID for username {}. Status: {}, Body: {}", username, response.getStatusCode(), response.getBody());
+                // If user profile was found but ID is missing, consider this a ResourceNotFound or potentially an internal error.
+                // Let's stick with ResourceNotFound for simplicity unless specific error handling is needed.
+                throw new ResourceNotFoundException("Could not find user ID for username: " + username);
+            }
+        } catch (FeignException e) {
+            log.error("Error fetching user ID for username {}: {}", username, e.getMessage(), e);
+            if (e.status() == HttpStatus.NOT_FOUND.value()) {
+                throw new ResourceNotFoundException("Username not found: " + username, e);
+            }
+            // Throw FeignClientException here
+            throw new FeignClientException("User service unavailable while fetching user ID for username: " + username, e);
+        }
+    }
+
+    /**
+     * Validate token format before making API calls.
+     */
+    private void validateTokenFormat(String token) {
+        if (!StringUtils.hasText(token) || !token.startsWith("Bearer ")) {
+            throw new UnauthorizedException("Invalid token format");
+        }
+    }
+
+    /**
+     * Get user ID from token.
+     * Primarily relies on fetching the current user profile via API call which returns UserResponse.
+     *
+     * @param token JWT token (including "Bearer ")
+     * @param action Description of action for logging purposes
+     * @return The user ID
+     * @throws UnauthorizedException if the token is invalid or user cannot be identified
+     */
+    public UserResponse getUserResponseFromToken(String token, String action) {
+        log.debug("Attempting to get user response from token for action: {}", action);
+        validateTokenFormat(token);
+        try {
+            // Primary mechanism: call profile endpoint which returns UserResponse
+            log.debug("Requesting current user profile (UserResponse) from user-service...");
+            ResponseEntity<UserResponse> response = userClient.getCurrentUserProfile(token);
+
+            UserResponse user = Optional.ofNullable(response)
+                .filter(res -> res.getStatusCode().is2xxSuccessful())
+                .map(ResponseEntity::getBody)
+                .filter(dto -> dto.getId() != null && StringUtils.hasText(dto.getUsername()))
+                .orElseThrow(() -> {
+                     // Add null check for response and response.getBody() in log message
+                     String responseBodyStr = "null body";
+                     // Use HttpStatusCode directly
+                     org.springframework.http.HttpStatusCode statusCode = null; 
+                     if (response != null) {
+                         statusCode = response.getStatusCode(); // Assign HttpStatusCode
+                         if (response.getBody() != null) {
+                             responseBodyStr = response.getBody().toString();
+                         }
+                     }
+                     log.warn("Failed to get valid UserResponse from profile endpoint. Status: {}, Body: {}", 
+                              statusCode != null ? statusCode : "null response", 
+                              responseBodyStr);
+                    return new UnauthorizedException("Invalid token or failed to retrieve user profile.");
+                });
+
+            // UUID userId = user.getId(); // No longer needed here
+            log.info("User '{}' (ID: {}) performing action: {}", user.getUsername(), user.getId(), action);
+            // Return the full UserResponse object
+            return user;
+        } catch (FeignException e) {
+            log.error("FeignException while getting user profile: Status={}, Message={}", e.status(), e.getMessage());
+             // Assuming custom UnauthorizedException constructor (String, Throwable)
+             throw new UnauthorizedException("Failed to identify user from token: " + e.getMessage(), e);
+        } catch (UnauthorizedException e) {
+            log.error("UnauthorizedException identifying user from token for action '{}': {}", action, e.getMessage());
+             throw e; // Re-throw specific exception
+        } catch (Exception e) {
+             log.error("Unexpected error identifying user from token for action '{}': {}", action, e.getMessage(), e);
+             // Assuming custom UnauthorizedException constructor (String, Throwable)
+             throw new UnauthorizedException("Unexpected error identifying user from token.", e);
+        }
+    }
+
+    // Convenience method without action description
+    public UserResponse getUserResponseFromToken(String token) {
+        return getUserResponseFromToken(token, "[Unknown Action]");
     }
 } 
