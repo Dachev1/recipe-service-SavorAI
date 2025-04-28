@@ -1,5 +1,6 @@
 plugins {
     id 'java'
+    id 'java-library'
     id 'org.springframework.boot' version '3.4.2'
     id 'io.spring.dependency-management' version '1.1.4'
 }
@@ -29,6 +30,10 @@ dependencyManagement {
     }
 }
 
+ext {
+    mapstructVersion = '1.5.5.Final'
+}
+
 dependencies {
     // Core Spring Boot starters
     implementation 'org.springframework.boot:spring-boot-starter-web'
@@ -36,6 +41,14 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-security'
     implementation 'org.springframework.boot:spring-boot-starter-validation'
     implementation 'org.springframework.boot:spring-boot-starter-actuator'
+
+    // MapStruct for bean mapping
+    implementation "org.mapstruct:mapstruct:${mapstructVersion}"
+    annotationProcessor "org.mapstruct:mapstruct-processor:${mapstructVersion}"
+    testAnnotationProcessor "org.mapstruct:mapstruct-processor:${mapstructVersion}"
+    
+    // Required for MapStruct to work with Lombok
+    annotationProcessor 'org.projectlombok:lombok-mapstruct-binding:0.2.0'
 
     // Spring Cloud - Feign Client
     implementation 'org.springframework.cloud:spring-cloud-starter-openfeign'
@@ -80,4 +93,7 @@ dependencies {
 
 tasks.named('test') {
     useJUnitPlatform()
+    jvmArgs = [
+        "-javaagent:${configurations.testRuntimeClasspath.find { it.name.contains('byte-buddy-agent') }}"
+    ]
 }

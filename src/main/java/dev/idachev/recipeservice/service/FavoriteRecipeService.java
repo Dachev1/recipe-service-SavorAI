@@ -18,6 +18,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -159,6 +160,105 @@ public class FavoriteRecipeService {
      */
     @Transactional(readOnly = true)
     public long getFavoriteCount(UUID recipeId) {
+        log.debug("Getting favorite count for recipe with ID: {}", recipeId);
         return favoriteRecipeRepository.countByRecipeId(recipeId);
+    }
+
+    /**
+     * Adds multiple recipes to user's favorites.
+     *
+     * @param userId    the user ID
+     * @param recipeIds list of recipe IDs to add to favorites
+     * @return number of recipes successfully added to favorites
+     */
+    @Transactional
+    public int addBatchToFavorites(UUID userId, List<UUID> recipeIds) {
+        log.debug("Adding batch of recipes to favorites for user with ID: {}", userId);
+        
+        int addedCount = 0;
+        
+        for (UUID recipeId : recipeIds) {
+            try {
+                // Check if recipe exists
+                if (!recipeRepository.existsById(recipeId)) {
+                    log.warn("Recipe with ID {} not found when adding to favorites", recipeId);
+                    continue;
+                }
+                
+                // Check if already in favorites
+                if (favoriteRecipeRepository.existsByUserIdAndRecipeId(userId, recipeId)) {
+                    log.debug("Recipe with ID {} is already in favorites for user {}", recipeId, userId);
+                    continue;
+                }
+                
+                // Add to favorites using builder
+                FavoriteRecipe favoriteRecipe = FavoriteRecipe.builder()
+                    .userId(userId)
+                    .recipeId(recipeId)
+                    .build();
+                
+                favoriteRecipeRepository.save(favoriteRecipe);
+                addedCount++;
+                
+                log.debug("Recipe with ID {} added to favorites for user {}", recipeId, userId);
+            } catch (Exception e) {
+                log.error("Error adding recipe {} to favorites for user {}: {}", recipeId, userId, e.getMessage());
+            }
+        }
+        
+        log.info("Added {} recipes to favorites for user {}", addedCount, userId);
+        return addedCount;
+    }
+
+    /**
+     * Removes multiple recipes from user's favorites.
+     *
+     * @param userId    the user ID
+     * @param recipeIds list of recipe IDs to remove from favorites
+     * @return number of recipes successfully removed from favorites
+     */
+    @Transactional
+    public int removeBatchFromFavorites(UUID userId, List<UUID> recipeIds) {
+        log.debug("Removing batch of recipes from favorites for user with ID: {}", userId);
+        
+        int removedCount = 0;
+        
+        for (UUID recipeId : recipeIds) {
+            try {
+                favoriteRecipeRepository.deleteByUserIdAndRecipeId(userId, recipeId);
+                removedCount++;
+                log.debug("Recipe with ID {} removed from favorites for user {}", recipeId, userId);
+            } catch (Exception e) {
+                log.error("Error removing recipe {} from favorites for user {}: {}", recipeId, userId, e.getMessage());
+            }
+        }
+        
+        log.info("Removed {} recipes from favorites for user {}", removedCount, userId);
+        return removedCount;
+    }
+    
+    /**
+     * Check favorite status for multiple recipes.
+     *
+     * @param userId    the user ID
+     * @param recipeIds set of recipe IDs to check
+     * @return map of recipe IDs to their favorite status
+     */
+    @Transactional(readOnly = true)
+    public Map<UUID, Boolean> getBatchFavoriteStatus(UUID userId, Set<UUID> recipeIds) {
+        log.debug("Checking batch favorite status for user with ID: {} and {} recipes", userId, recipeIds.size());
+        return favoriteRecipeRepository.getUserFavoritesMap(userId, recipeIds);
+    }
+    
+    /**
+     * Get favorite counts for multiple recipes.
+     *
+     * @param recipeIds set of recipe IDs to get counts for
+     * @return map of recipe IDs to their favorite counts
+     */
+    @Transactional(readOnly = true)
+    public Map<UUID, Long> getBatchFavoriteCounts(Set<UUID> recipeIds) {
+        log.debug("Getting batch favorite counts for {} recipes", recipeIds.size());
+        return favoriteRecipeRepository.getFavoriteCountsMap(recipeIds);
     }
 }

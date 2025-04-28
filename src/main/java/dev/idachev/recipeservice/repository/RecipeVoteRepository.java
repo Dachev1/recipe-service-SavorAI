@@ -20,7 +20,6 @@ public interface RecipeVoteRepository extends JpaRepository<RecipeVote, UUID> {
     
     List<RecipeVote> findByUserIdAndRecipeIdIn(UUID userId, Set<UUID> recipeIds);
     
-    // TODO: Verify intended usage. If Recipe entity uses cascade delete for votes,
-    // this method might be redundant or only needed for specific bulk operations.
-    void deleteByRecipeId(UUID recipeId);
+    // Unused method - consider removing if Recipe entity handles cascade deletion for votes.
+    // void deleteByRecipeId(UUID recipeId);
 } 

@@ -1,6 +1,9 @@
 package dev.idachev.recipeservice.web;
 
 import dev.idachev.recipeservice.service.FavoriteRecipeService;
+import dev.idachev.recipeservice.web.dto.BatchFavoriteCountResponse;
+import dev.idachev.recipeservice.web.dto.BatchFavoriteRequest;
+import dev.idachev.recipeservice.web.dto.BatchFavoriteStatusResponse;
 import dev.idachev.recipeservice.web.dto.FavoriteCountResponse;
 import dev.idachev.recipeservice.web.dto.FavoriteRecipeDto;
 import dev.idachev.recipeservice.web.dto.IsFavoriteResponse;
@@ -19,7 +22,10 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
 /**
@@ -137,5 +143,92 @@ public class FavoriteRecipeController {
         long count = favoriteRecipeService.getFavoriteCount(recipeId);
         log.debug("Exiting getFavoriteCount: recipeId={}, count={}", recipeId, count);
         return ResponseEntity.ok(new FavoriteCountResponse(count));
+    }
+    
+    // --- Batch Operations ---
+    
+    @Operation(summary = "Check multiple recipes favorite status", 
+              description = "Checks if multiple recipes are in the current user's favorites")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Favorite statuses returned",
+                    content = @Content(schema = @Schema(implementation = BatchFavoriteStatusResponse.class))),
+            @ApiResponse(responseCode = "401", description = "Unauthorized")
+    })
+    @PostMapping("/check/batch")
+    public ResponseEntity<BatchFavoriteStatusResponse> batchCheckFavoriteStatus(
+            @RequestBody BatchFavoriteRequest request,
+            @Parameter(hidden = true) @AuthenticationPrincipal UUID userId) {
+        log.debug("Entering batchCheckFavoriteStatus: userId={}, recipeCount={}", 
+                 userId, request.recipeIds().size());
+                 
+        Set<UUID> recipeIds = new HashSet<>(request.recipeIds());
+        Map<UUID, Boolean> statuses = favoriteRecipeService.getBatchFavoriteStatus(userId, recipeIds);
+        
+        log.debug("Exiting batchCheckFavoriteStatus: userId={}, statusCount={}", 
+                 userId, statuses.size());
+                 
+        return ResponseEntity.ok(new BatchFavoriteStatusResponse(statuses));
+    }
+    
+    @Operation(summary = "Get favorite counts for multiple recipes", 
+              description = "Returns the number of users who have favorited each recipe")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Favorite counts returned",
+                    content = @Content(schema = @Schema(implementation = BatchFavoriteCountResponse.class)))
+    })
+    @PostMapping("/count/batch")
+    public ResponseEntity<BatchFavoriteCountResponse> batchGetFavoriteCounts(
+            @RequestBody BatchFavoriteRequest request) {
+        log.debug("Entering batchGetFavoriteCounts: recipeCount={}", request.recipeIds().size());
+        
+        Set<UUID> recipeIds = new HashSet<>(request.recipeIds());
+        Map<UUID, Long> counts = favoriteRecipeService.getBatchFavoriteCounts(recipeIds);
+        
+        log.debug("Exiting batchGetFavoriteCounts: countSize={}", counts.size());
+        
+        return ResponseEntity.ok(new BatchFavoriteCountResponse(counts));
+    }
+    
+    @Operation(summary = "Add multiple recipes to favorites", 
+              description = "Adds multiple recipes to the current user's favorites")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Number of recipes added to favorites",
+                    content = @Content(schema = @Schema(implementation = Integer.class))),
+            @ApiResponse(responseCode = "401", description = "Unauthorized")
+    })
+    @PostMapping("/batch")
+    public ResponseEntity<Integer> batchAddToFavorites(
+            @RequestBody BatchFavoriteRequest request,
+            @Parameter(hidden = true) @AuthenticationPrincipal UUID userId) {
+        log.debug("Entering batchAddToFavorites: userId={}, recipeCount={}", 
+                 userId, request.recipeIds().size());
+        
+        int addedCount = favoriteRecipeService.addBatchToFavorites(userId, request.recipeIds());
+        
+        log.debug("Exiting batchAddToFavorites: userId={}, addedCount={}", userId, addedCount);
+        
+        return ResponseEntity.ok(addedCount);
+    }
+    
+    @Operation(summary = "Remove multiple recipes from favorites", 
+              description = "Removes multiple recipes from the current user's favorites")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Number of recipes removed from favorites",
+                    content = @Content(schema = @Schema(implementation = Integer.class))),
+            @ApiResponse(responseCode = "401", description = "Unauthorized")
+    })
+    @DeleteMapping("/batch")
+    public ResponseEntity<Integer> batchRemoveFromFavorites(
+            @RequestBody BatchFavoriteRequest request,
+            @Parameter(hidden = true) @AuthenticationPrincipal UUID userId) {
+        log.debug("Entering batchRemoveFromFavorites: userId={}, recipeCount={}", 
+                 userId, request.recipeIds().size());
+        
+        int removedCount = favoriteRecipeService.removeBatchFromFavorites(userId, request.recipeIds());
+        
+        log.debug("Exiting batchRemoveFromFavorites: userId={}, removedCount={}", 
+                 userId, removedCount);
+        
+        return ResponseEntity.ok(removedCount);
     }
 } 

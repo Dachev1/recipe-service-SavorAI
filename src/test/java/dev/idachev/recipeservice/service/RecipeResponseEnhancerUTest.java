@@ -29,13 +29,16 @@ class RecipeResponseEnhancerUTest {
 
     @Mock
     private FavoriteRecipeRepository favoriteRecipeRepository;
+    
     @Mock
     private VoteService voteService;
+    
     @Mock
     private CommentService commentService;
+    
     @Mock
     private UserService userService;
-
+    
     @InjectMocks
     private RecipeResponseEnhancer recipeResponseEnhancer;
 

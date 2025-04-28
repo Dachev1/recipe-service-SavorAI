@@ -1,9 +1,10 @@
 package dev.idachev.recipeservice.config;
 
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
+import static org.springframework.security.config.Customizer.withDefaults;
+
+import java.io.IOException;
+import java.time.LocalDateTime;
+
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -20,14 +21,13 @@ import org.springframework.security.web.csrf.CsrfTokenRequestAttributeHandler;
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 import org.springframework.security.web.util.matcher.OrRequestMatcher;
 import org.springframework.security.web.util.matcher.RequestMatcher;
-import static org.springframework.security.config.Customizer.withDefaults;
 
-import java.io.IOException;
-import java.time.LocalDateTime;
-import java.util.Arrays;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import dev.idachev.recipeservice.web.dto.ErrorResponse;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import lombok.extern.slf4j.Slf4j;
 
 @Configuration
 @EnableWebSecurity
@@ -47,8 +47,7 @@ public class SecurityConfig {
     private RequestMatcher apiMatcher() {
         return new OrRequestMatcher(
                 new AntPathRequestMatcher("/api/**"),
-                new AntPathRequestMatcher("/v1/**")
-        );
+                new AntPathRequestMatcher("/v1/**"));
     }
 
     @Bean
@@ -56,7 +55,8 @@ public class SecurityConfig {
         log.info("Configuring security filter chain");
 
         http
-                // Enable CORS - Use withDefaults() to apply CORS config from elsewhere (e.g., WebMvcConfigurer)
+                // Enable CORS - Use withDefaults() to apply CORS config from elsewhere (e.g.,
+                // WebMvcConfigurer)
                 .cors(withDefaults())
                 .csrf(csrf -> csrf
                         .ignoringRequestMatchers(apiMatcher())
@@ -72,7 +72,8 @@ public class SecurityConfig {
                         .requestMatchers("/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
                         .requestMatchers("/actuator/**").permitAll()
                         .requestMatchers("/error/**", "/static/**", "/css/**", "/js/**").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/v1/recipes/auth-test", "/v1/recipes/auth-test").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/v1/recipes/auth-test", "/v1/recipes/auth-test")
+                        .permitAll()
 
                         // Secured endpoints
                         .requestMatchers(HttpMethod.POST,
@@ -83,8 +84,7 @@ public class SecurityConfig {
                         .hasAnyRole("USER", "ADMIN")
 
                         // All other requests need authentication
-                        .anyRequest().authenticated()
-                )
+                        .anyRequest().authenticated())
 
                 // Configure stateless session management
                 .sessionManagement(session -> session
@@ -92,19 +92,22 @@ public class SecurityConfig {
 
                 // Configure exception handling
                 .exceptionHandling(ex -> ex
-                        .accessDeniedHandler((request, response, exception) -> sendErrorResponse(
-                                request, response, HttpStatus.FORBIDDEN,
-                                "Forbidden", "You don't have permission to access this resource"))
+                        .accessDeniedHandler((request, response, exception) -> {
+                            log.warn("Access denied: {}", exception.getMessage());
+                            sendErrorResponse(
+                                    request, response, HttpStatus.FORBIDDEN,
+                                    "Forbidden", "You don't have permission to access this resource");
+                        })
                         .authenticationEntryPoint((request, response, authException) -> {
                             // Skip auth errors for OPTIONS requests
                             if (request.getMethod().equals("OPTIONS")) {
                                 response.setStatus(HttpServletResponse.SC_OK);
                                 return;
                             }
+                            log.warn("Authentication failure: {}", authException.getMessage());
                             sendErrorResponse(request, response, HttpStatus.UNAUTHORIZED,
                                     "Unauthorized", "Authentication required");
-                        })
-                )
+                        }))
 
                 // Add JWT filter
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
@@ -113,10 +116,11 @@ public class SecurityConfig {
     }
 
     /**
-     * Sends a standardized JSON error response for API requests, or uses default sendError otherwise.
+     * Sends a standardized JSON error response for API requests, or uses default
+     * sendError otherwise.
      */
     private void sendErrorResponse(HttpServletRequest request, HttpServletResponse response,
-                                   HttpStatus status, String errorTitle, String detailMessage) throws IOException {
+            HttpStatus status, String errorTitle, String detailMessage) throws IOException {
         log.warn("{} error for request to {}: {}", status, request.getRequestURI(), detailMessage);
 
         if (apiMatcher().matches(request)) {
@@ -127,12 +131,12 @@ public class SecurityConfig {
             String combinedMessage = String.format("%s: %s", errorTitle, detailMessage);
 
             ErrorResponse errorResponse = new ErrorResponse(
-                status.value(),
-                combinedMessage, // Use combined message
-                LocalDateTime.now()
-                // No details map for these errors
+                    status.value(),
+                    combinedMessage, // Use combined message
+                    LocalDateTime.now()
+            // No details map for these errors
             );
-            
+
             // Use ObjectMapper to write JSON
             response.getWriter().write(objectMapper.writeValueAsString(errorResponse));
         } else {
@@ -140,4 +144,4 @@ public class SecurityConfig {
             response.sendError(status.value(), detailMessage);
         }
     }
-} 
+}

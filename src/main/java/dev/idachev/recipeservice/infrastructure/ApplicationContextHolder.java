@@ -4,6 +4,7 @@ import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.stereotype.Component;
+import org.springframework.lang.NonNull;
 
 /**
  * Utility to access Spring beans from non-Spring contexts or circular dependency situations.
@@ -19,7 +20,7 @@ public class ApplicationContextHolder implements ApplicationContextAware {
     // or specific framework integration points not supporting DI).
 
     @Override
-    public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
+    public void setApplicationContext(@NonNull ApplicationContext applicationContext) throws BeansException {
         context = applicationContext;
     }
     

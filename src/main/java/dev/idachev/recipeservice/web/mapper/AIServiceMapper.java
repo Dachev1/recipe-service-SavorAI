@@ -1,6 +1,5 @@
 package dev.idachev.recipeservice.web.mapper;
 
-import dev.idachev.recipeservice.model.DifficultyLevel;
 import dev.idachev.recipeservice.web.dto.MacrosDto;
 import dev.idachev.recipeservice.web.dto.RecipeRequest;
 import dev.idachev.recipeservice.web.dto.SimplifiedRecipeResponse;
@@ -36,7 +35,8 @@ public class AIServiceMapper {
             recipe.totalTimeMinutes(),
             extractMacros(recipe),
             recipe.difficulty(),
-            recipe.servingSuggestions()
+            recipe.servingSuggestions(),
+            null
         );
     }
 

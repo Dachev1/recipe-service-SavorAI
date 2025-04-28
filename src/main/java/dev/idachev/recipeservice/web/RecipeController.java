@@ -1,6 +1,7 @@
 package dev.idachev.recipeservice.web;
 
 import dev.idachev.recipeservice.model.Recipe;
+import dev.idachev.recipeservice.service.RecipeSearchService;
 import dev.idachev.recipeservice.service.RecipeService;
 import dev.idachev.recipeservice.service.VoteService;
 import dev.idachev.recipeservice.user.service.UserService;
@@ -9,7 +10,7 @@ import dev.idachev.recipeservice.web.dto.RecipeResponse;
 import dev.idachev.recipeservice.web.dto.SimplifiedRecipeResponse;
 import dev.idachev.recipeservice.web.dto.VoteRequest;
 import dev.idachev.recipeservice.web.mapper.RecipeMapper;
-import dev.idachev.recipeservice.service.RecipeSearchService;
+import dev.idachev.recipeservice.exception.UnauthorizedAccessException;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -72,6 +73,13 @@ public class RecipeController {
             @RequestPart(value = "image", required = false) MultipartFile image,
             @Parameter(hidden = true) @AuthenticationPrincipal UUID userId) {
         log.debug("Entering createRecipe (multipart): userId={}", userId);
+        
+        if (userId == null) {
+            log.error("Authentication principal (userId) is null in createRecipe endpoint!");
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+        
+        log.info("Creating recipe with title '{}' for user: {}", request.title(), userId);
         RecipeResponse createdRecipe = recipeService.createRecipe(request, image, userId);
         log.debug("Exiting createRecipe (multipart): createdRecipeId={}, userId={}", createdRecipe.id(), userId);
         return ResponseEntity.status(HttpStatus.CREATED).body(createdRecipe);
@@ -123,14 +131,20 @@ public class RecipeController {
             @RequestParam(required = false, defaultValue = "false") boolean showPersonal,
             @Parameter(hidden = true) @AuthenticationPrincipal UUID userId) {
         log.debug("Entering getAllRecipes: pageable={}, showPersonal={}, userId={}", pageable, showPersonal, userId);
-        Page<RecipeResponse> recipes;
-        if (showPersonal) {
-            recipes = recipeSearchService.getAllRecipes(pageable, userId);
-        } else {
-            recipes = recipeSearchService.getAllRecipesExcludingUser(pageable, userId);
+        
+        Page<RecipeResponse> recipes = showPersonal
+                ? recipeSearchService.getAllRecipes(pageable, userId)
+                : recipeSearchService.getAllRecipesExcludingUser(pageable, userId);
+        
+        // Ensure we never return null to avoid NPE
+        if (recipes == null) {
+            log.warn("Recipe search service returned null result");
+            recipes = Page.empty(pageable);
         }
+        
         log.debug("Exiting getAllRecipes: userId={}, pageNumber={}, pageSize={}, results={}",
                 userId, pageable.getPageNumber(), pageable.getPageSize(), recipes.getNumberOfElements());
+        
         return ResponseEntity.ok(recipes);
     }
 

@@ -6,6 +6,7 @@ import dev.idachev.recipeservice.model.Comment;
 import dev.idachev.recipeservice.model.Recipe;
 import dev.idachev.recipeservice.repository.CommentRepository;
 import dev.idachev.recipeservice.repository.RecipeRepository;
+import dev.idachev.recipeservice.repository.dto.RecipeCommentCountDto;
 import dev.idachev.recipeservice.user.dto.UserResponse;
 import dev.idachev.recipeservice.user.service.UserService;
 import dev.idachev.recipeservice.web.dto.CommentRequest;
@@ -597,8 +598,8 @@ class CommentServiceUTest {
             when(commentMapper.toResponse(updatedComment, true, false)).thenReturn(expectedResponse);
 
             // When
-            // Call update with the owner's userId (testUserId)
-            CommentResponse actualResponse = commentService.updateComment(testCommentId, updateRequest, testUserId);
+            // Call update with the owner's userId (testUserId) and the content string
+            CommentResponse actualResponse = commentService.updateComment(testCommentId, updateRequest.content(), testUserId);
 
             // Then
             assertThat(actualResponse).isEqualTo(expectedResponse);
@@ -627,7 +628,8 @@ class CommentServiceUTest {
             when(commentRepository.findById(nonExistentCommentId)).thenReturn(Optional.empty());
 
             // When / Then
-            assertThatThrownBy(() -> commentService.updateComment(nonExistentCommentId, updateRequest, testUserId))
+            // Call update with the content string
+            assertThatThrownBy(() -> commentService.updateComment(nonExistentCommentId, updateRequest.content(), testUserId))
                 .isInstanceOf(ResourceNotFoundException.class)
                 .hasMessageContaining("Comment not found");
 
@@ -647,8 +649,8 @@ class CommentServiceUTest {
             when(commentRepository.findById(testCommentId)).thenReturn(Optional.of(existingComment));
 
             // When / Then
-            // Call update with differentUserId
-            assertThatThrownBy(() -> commentService.updateComment(testCommentId, updateRequest, differentUserId))
+            // Call update with differentUserId and the content string
+            assertThatThrownBy(() -> commentService.updateComment(testCommentId, updateRequest.content(), differentUserId))
                 .isInstanceOf(UnauthorizedAccessException.class)
                 .hasMessageContaining("You do not have permission to update this comment");
 
@@ -769,7 +771,7 @@ class CommentServiceUTest {
                 .hasMessageContaining("Recipe not found with id: " + testRecipeId);
 
             // Verify mocks
-            verify(commentRepository).findById(testCommentId);
+            verify(commentRepository, times(2)).findById(testCommentId);
             verify(recipeRepository, times(2)).findById(testRecipeId);
             verify(commentRepository, never()).delete(any(Comment.class));
             verifyNoInteractions(commentMapper, userService);
@@ -836,16 +838,12 @@ class CommentServiceUTest {
             UUID recipeId3 = UUID.randomUUID(); // Recipe with 0 comments
             Set<UUID> recipeIds = Set.of(recipeId1, recipeId2, recipeId3);
             
-            // Mock repository response
-            CommentRepository.RecipeCommentCount count1 = mock(CommentRepository.RecipeCommentCount.class);
-            when(count1.getRecipeId()).thenReturn(recipeId1);
-            when(count1.getCommentCount()).thenReturn(3L);
+            // Mock repository response using the new DTO
+            RecipeCommentCountDto count1 = new RecipeCommentCountDto(recipeId1, 3L);
+            RecipeCommentCountDto count2 = new RecipeCommentCountDto(recipeId2, 10L);
             
-            CommentRepository.RecipeCommentCount count2 = mock(CommentRepository.RecipeCommentCount.class);
-            when(count2.getRecipeId()).thenReturn(recipeId2);
-            when(count2.getCommentCount()).thenReturn(10L);
-            
-            List<CommentRepository.RecipeCommentCount> repoResponse = List.of(count1, count2);
+            // Mock the repository call to return a list of DTOs
+            List<RecipeCommentCountDto> repoResponse = List.of(count1, count2);
             when(commentRepository.countByRecipeIdIn(recipeIds)).thenReturn(repoResponse);
             
             // Expected map (should include recipeId3 with count 0)
@@ -886,7 +884,11 @@ class CommentServiceUTest {
         }
     }
 
-    // TODO: Add tests for getCommentsByUserId once implemented
-    // TODO: Add tests for deleteCommentAsAdmin
-    // TODO: Consider testing rate limiting if applyRateLimitingCheck becomes complex
+    // Add missing tests for future implementations
+    /**
+     * Tests for future implementations, to be added when the features are implemented
+     */
+    // Tests for getCommentsByUserId
+    // Tests for deleteCommentAsAdmin
+    // Tests for rate limiting
 } 

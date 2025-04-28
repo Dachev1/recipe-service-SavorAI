@@ -4,6 +4,7 @@ import dev.idachev.recipeservice.exception.AIServiceException;
 import dev.idachev.recipeservice.exception.BadRequestException;
 import dev.idachev.recipeservice.exception.ResourceNotFoundException;
 import dev.idachev.recipeservice.exception.UnauthorizedException;
+import dev.idachev.recipeservice.exception.UnauthorizedAccessException;
 import dev.idachev.recipeservice.web.dto.ErrorResponse;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -25,6 +26,9 @@ import org.springframework.web.method.annotation.MethodArgumentTypeMismatchExcep
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
+
+import jakarta.validation.ConstraintViolationException;
+import jakarta.validation.ConstraintViolation;
 
 /**
  * Global exception handler for the application.
@@ -106,6 +110,35 @@ public class GlobalExceptionHandler {
                 ex.getMessage(),
                 LocalDateTime.now(),
                 null
+        );
+
+        return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
+    }
+
+    /**
+     * Handles ConstraintViolationException (e.g., from @Validated on method parameters)
+     * and returns a BAD_REQUEST response.
+     */
+    @ExceptionHandler(ConstraintViolationException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    @ApiResponse(responseCode = "400", description = "Constraint violation error",
+            content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+    public ResponseEntity<ErrorResponse> handleConstraintViolationException(ConstraintViolationException ex) {
+        log.error("Constraint violation: {}", ex.getMessage());
+
+        Map<String, String> errors = new HashMap<>();
+        for (ConstraintViolation<?> violation : ex.getConstraintViolations()) {
+            // Extract a meaningful field name if possible
+            String propertyPath = violation.getPropertyPath().toString();
+            String fieldName = propertyPath.contains(".") ? propertyPath.substring(propertyPath.lastIndexOf('.') + 1) : propertyPath;
+            errors.put(fieldName, violation.getMessage());
+        }
+
+        ErrorResponse errorResponse = new ErrorResponse(
+                HttpStatus.BAD_REQUEST.value(),
+                "Validation failed",
+                LocalDateTime.now(),
+                errors
         );
 
         return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
@@ -200,6 +233,46 @@ public class GlobalExceptionHandler {
         );
 
         return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
+    }
+
+    /**
+     * Handles illegal state exception (e.g., when a duplicate resource creation is attempted)
+     */
+    @ExceptionHandler(IllegalStateException.class)
+    @ResponseStatus(HttpStatus.CONFLICT)
+    @ApiResponse(responseCode = "409", description = "Conflict - Resource already exists",
+            content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+    public ResponseEntity<ErrorResponse> handleIllegalStateException(IllegalStateException ex) {
+        log.warn("Conflict: {}", ex.getMessage());
+
+        ErrorResponse errorResponse = new ErrorResponse(
+                HttpStatus.CONFLICT.value(),
+                ex.getMessage(),
+                LocalDateTime.now(),
+                null
+        );
+
+        return new ResponseEntity<>(errorResponse, HttpStatus.CONFLICT);
+    }
+
+    /**
+     * Handles unauthorized access to resources owned by other users
+     */
+    @ExceptionHandler(UnauthorizedAccessException.class)
+    @ResponseStatus(HttpStatus.FORBIDDEN)
+    @ApiResponse(responseCode = "403", description = "Forbidden - Unauthorized access",
+            content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+    public ResponseEntity<ErrorResponse> handleUnauthorizedAccessException(UnauthorizedAccessException ex) {
+        log.warn("Unauthorized access: {}", ex.getMessage());
+
+        ErrorResponse errorResponse = new ErrorResponse(
+                HttpStatus.FORBIDDEN.value(),
+                ex.getMessage(),
+                LocalDateTime.now(),
+                null
+        );
+
+        return new ResponseEntity<>(errorResponse, HttpStatus.FORBIDDEN);
     }
 
     /**

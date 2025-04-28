@@ -36,5 +36,8 @@ public record SimplifiedRecipeResponse(
     DifficultyLevel difficulty, 
     
     @Schema(description = "Serving suggestions including garnishes, sides, and pairings", example = "Serve hot with a sprinkle of fresh parsley and a glass of white wine")
-    String servingSuggestions
+    String servingSuggestions,
+    
+    @Schema(description = "Recipe ID", example = "12345")
+    String recipeId
 ) {}

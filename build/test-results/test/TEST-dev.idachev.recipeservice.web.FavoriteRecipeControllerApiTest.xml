@@ -1,51 +1,30 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="dev.idachev.recipeservice.web.FavoriteRecipeControllerApiTest" tests="12" skipped="0" failures="0" errors="0" timestamp="2025-03-24T06:42:45" hostname="DACHEV" time="0.337">
+<testsuite name="dev.idachev.recipeservice.web.FavoriteRecipeControllerApiTest" tests="6" skipped="0" failures="0" errors="0" timestamp="2025-04-27T17:25:19" hostname="DACHEV" time="0.379">
   <properties/>
-  <testcase name="Given valid token, when getting all user favorites, then return list of favorites" classname="dev.idachev.recipeservice.web.FavoriteRecipeControllerApiTest" time="0.158"/>
-  <testcase name="Given valid token but no favorites, when getting user favorites, then return empty page" classname="dev.idachev.recipeservice.web.FavoriteRecipeControllerApiTest" time="0.03"/>
-  <testcase name="Given valid recipe ID not in favorites, when checking if in favorites, then return false" classname="dev.idachev.recipeservice.web.FavoriteRecipeControllerApiTest" time="0.011"/>
-  <testcase name="Given valid recipe ID and token, when adding to favorites, then return favorite recipe details" classname="dev.idachev.recipeservice.web.FavoriteRecipeControllerApiTest" time="0.012"/>
-  <testcase name="Given recipe not in favorites, when removing from favorites, then return 404 not found" classname="dev.idachev.recipeservice.web.FavoriteRecipeControllerApiTest" time="0.018"/>
-  <testcase name="Given valid recipe ID and token, when removing from favorites, then return no content status" classname="dev.idachev.recipeservice.web.FavoriteRecipeControllerApiTest" time="0.008"/>
-  <testcase name="Given non-existent recipe ID, when adding to favorites, then return 404 not found" classname="dev.idachev.recipeservice.web.FavoriteRecipeControllerApiTest" time="0.01"/>
-  <testcase name="Given valid recipe ID with zero favorites, when getting favorite count, then return zero" classname="dev.idachev.recipeservice.web.FavoriteRecipeControllerApiTest" time="0.016"/>
-  <testcase name="Given valid token but no favorites, when getting all user favorites, then return empty list" classname="dev.idachev.recipeservice.web.FavoriteRecipeControllerApiTest" time="0.022"/>
-  <testcase name="Given valid recipe ID and token, when checking if recipe is in favorites, then return boolean result" classname="dev.idachev.recipeservice.web.FavoriteRecipeControllerApiTest" time="0.01"/>
-  <testcase name="Given valid token, when getting user favorites with pagination, then return paginated favorites" classname="dev.idachev.recipeservice.web.FavoriteRecipeControllerApiTest" time="0.01"/>
-  <testcase name="Given valid recipe ID, when getting favorite count, then return count value" classname="dev.idachev.recipeservice.web.FavoriteRecipeControllerApiTest" time="0.01"/>
-  <system-out><![CDATA[08:42:42.334 [Test worker] INFO org.springframework.test.context.support.AnnotationConfigContextLoaderUtils -- Could not detect default configuration classes for test class [dev.idachev.recipeservice.web.FavoriteRecipeControllerApiTest]: FavoriteRecipeControllerApiTest does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
-08:42:42.547 [Test worker] INFO org.springframework.boot.test.context.SpringBootTestContextBootstrapper -- Found @SpringBootConfiguration dev.idachev.recipeservice.Application for test class dev.idachev.recipeservice.web.FavoriteRecipeControllerApiTest
-
-  .   ____          _            __ _ _
- /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
-( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
- \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
-  '  |____| .__|_| |_|_| |_\__, | / / / /
- =========|_|==============|___/=/_/_/_/
-
- :: Spring Boot ::                (v3.4.2)
-
-2025-03-24T08:42:43.120+02:00  WARN 28808 --- [recipe-service] [    Test worker] ory$DuplicateJsonObjectContextCustomizer : 
-
-Found multiple occurrences of org.json.JSONObject on the class path:
-
-	jar:file:/C:/Users/pffe3/.gradle/caches/modules-2/files-2.1/com.vaadin.external.google/android-json/0.0.20131108.vaadin1/fa26d351fe62a6a17f5cda1287c1c6110dec413f/android-json-0.0.20131108.vaadin1.jar!/org/json/JSONObject.class
-	jar:file:/C:/Users/pffe3/.gradle/caches/modules-2/files-2.1/org.json/json/20240303/ebb88e8fb5122b7506d5cf1d69f1ccdb790d22a/json-20240303.jar!/org/json/JSONObject.class
-
-You may wish to exclude one of them to ensure predictable runtime behavior
-
-2025-03-24T08:42:43.138+02:00  INFO 28808 --- [recipe-service] [    Test worker] d.i.r.w.FavoriteRecipeControllerApiTest  : Starting FavoriteRecipeControllerApiTest using Java 21.0.6 with PID 28808 (started by pffe3 in C:\Users\pffe3\Desktop\recipe-service-SavorAI)
-2025-03-24T08:42:43.138+02:00  INFO 28808 --- [recipe-service] [    Test worker] d.i.r.w.FavoriteRecipeControllerApiTest  : No active profile set, falling back to 1 default profile: "default"
-2025-03-24T08:42:45.059+02:00  INFO 28808 --- [recipe-service] [    Test worker] o.s.b.t.m.w.SpringBootMockServletContext : Initializing Spring TestDispatcherServlet ''
-2025-03-24T08:42:45.059+02:00  INFO 28808 --- [recipe-service] [    Test worker] o.s.t.web.servlet.TestDispatcherServlet  : Initializing Servlet ''
-2025-03-24T08:42:45.061+02:00  INFO 28808 --- [recipe-service] [    Test worker] o.s.t.web.servlet.TestDispatcherServlet  : Completed initialization in 2 ms
-2025-03-24T08:42:45.162+02:00  INFO 28808 --- [recipe-service] [    Test worker] d.i.r.w.FavoriteRecipeControllerApiTest  : Started FavoriteRecipeControllerApiTest in 2.414 seconds (process running for 6.117)
-2025-03-24T08:42:45.343+02:00  WARN 28808 --- [recipe-service] [    Test worker] ration$PageModule$WarningLoggingModifier : Serializing PageImpl instances as-is is not supported, meaning that there is no guarantee about the stability of the resulting JSON structure!
-	For a stable JSON structure, please use Spring Data's PagedModel (globally via @EnableSpringDataWebSupport(pageSerializationMode = VIA_DTO))
-	or Spring HATEOAS and Spring Data's PagedResourcesAssembler as documented in https://docs.spring.io/spring-data/commons/reference/repositories/core-extensions.html#core.web.pageables.
-
-2025-03-24T08:42:45.398+02:00 ERROR 28808 --- [recipe-service] [    Test worker] d.i.r.web.GlobalExceptionHandler         : Resource not found: Recipe not found in favorites: dbafb374-116a-4253-b3b8-6230ef42ae11
-2025-03-24T08:42:45.424+02:00 ERROR 28808 --- [recipe-service] [    Test worker] d.i.r.web.GlobalExceptionHandler         : Resource not found: Recipe not found with id: dbafb374-116a-4253-b3b8-6230ef42ae11
+  <testcase name="shouldAddRecipeToFavorites()" classname="dev.idachev.recipeservice.web.FavoriteRecipeControllerApiTest" time="0.306"/>
+  <testcase name="shouldListFavorites()" classname="dev.idachev.recipeservice.web.FavoriteRecipeControllerApiTest" time="0.023"/>
+  <testcase name="shouldReturn401ForAllEndpointsWhenUnauthenticated()" classname="dev.idachev.recipeservice.web.FavoriteRecipeControllerApiTest" time="0.011"/>
+  <testcase name="shouldReturn401WhenAddingWithoutAuthentication()" classname="dev.idachev.recipeservice.web.FavoriteRecipeControllerApiTest" time="0.01"/>
+  <testcase name="shouldRemoveRecipeFromFavorites()" classname="dev.idachev.recipeservice.web.FavoriteRecipeControllerApiTest" time="0.012"/>
+  <testcase name="shouldCheckIfFavorite()" classname="dev.idachev.recipeservice.web.FavoriteRecipeControllerApiTest" time="0.015"/>
+  <system-out><![CDATA[2025-04-27T20:25:20.062+03:00  INFO 13488 --- [recipe-service] [    Test worker] o.s.mock.web.MockServletContext          : Initializing Spring TestDispatcherServlet ''
+2025-04-27T20:25:20.062+03:00  INFO 13488 --- [recipe-service] [    Test worker] o.s.t.web.servlet.TestDispatcherServlet  : Initializing Servlet ''
+2025-04-27T20:25:20.062+03:00  INFO 13488 --- [recipe-service] [    Test worker] o.s.t.web.servlet.TestDispatcherServlet  : Completed initialization in 0 ms
+2025-04-27T20:25:20.087+03:00  INFO 13488 --- [recipe-service] [    Test worker] o.s.mock.web.MockServletContext          : Initializing Spring TestDispatcherServlet ''
+2025-04-27T20:25:20.087+03:00  INFO 13488 --- [recipe-service] [    Test worker] o.s.t.web.servlet.TestDispatcherServlet  : Initializing Servlet ''
+2025-04-27T20:25:20.087+03:00  INFO 13488 --- [recipe-service] [    Test worker] o.s.t.web.servlet.TestDispatcherServlet  : Completed initialization in 0 ms
+2025-04-27T20:25:20.108+03:00  INFO 13488 --- [recipe-service] [    Test worker] o.s.mock.web.MockServletContext          : Initializing Spring TestDispatcherServlet ''
+2025-04-27T20:25:20.109+03:00  INFO 13488 --- [recipe-service] [    Test worker] o.s.t.web.servlet.TestDispatcherServlet  : Initializing Servlet ''
+2025-04-27T20:25:20.109+03:00  INFO 13488 --- [recipe-service] [    Test worker] o.s.t.web.servlet.TestDispatcherServlet  : Completed initialization in 0 ms
+2025-04-27T20:25:20.121+03:00  INFO 13488 --- [recipe-service] [    Test worker] o.s.mock.web.MockServletContext          : Initializing Spring TestDispatcherServlet ''
+2025-04-27T20:25:20.121+03:00  INFO 13488 --- [recipe-service] [    Test worker] o.s.t.web.servlet.TestDispatcherServlet  : Initializing Servlet ''
+2025-04-27T20:25:20.121+03:00  INFO 13488 --- [recipe-service] [    Test worker] o.s.t.web.servlet.TestDispatcherServlet  : Completed initialization in 0 ms
+2025-04-27T20:25:20.131+03:00  INFO 13488 --- [recipe-service] [    Test worker] o.s.mock.web.MockServletContext          : Initializing Spring TestDispatcherServlet ''
+2025-04-27T20:25:20.131+03:00  INFO 13488 --- [recipe-service] [    Test worker] o.s.t.web.servlet.TestDispatcherServlet  : Initializing Servlet ''
+2025-04-27T20:25:20.131+03:00  INFO 13488 --- [recipe-service] [    Test worker] o.s.t.web.servlet.TestDispatcherServlet  : Completed initialization in 0 ms
+2025-04-27T20:25:20.144+03:00  INFO 13488 --- [recipe-service] [    Test worker] o.s.mock.web.MockServletContext          : Initializing Spring TestDispatcherServlet ''
+2025-04-27T20:25:20.144+03:00  INFO 13488 --- [recipe-service] [    Test worker] o.s.t.web.servlet.TestDispatcherServlet  : Initializing Servlet ''
+2025-04-27T20:25:20.144+03:00  INFO 13488 --- [recipe-service] [    Test worker] o.s.t.web.servlet.TestDispatcherServlet  : Completed initialization in 0 ms
 ]]></system-out>
   <system-err><![CDATA[]]></system-err>
 </testsuite>

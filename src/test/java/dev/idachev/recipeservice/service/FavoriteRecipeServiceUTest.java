@@ -7,8 +7,8 @@ import dev.idachev.recipeservice.repository.FavoriteRecipeRepository;
 import dev.idachev.recipeservice.repository.RecipeRepository;
 import dev.idachev.recipeservice.web.dto.FavoriteRecipeDto;
 import dev.idachev.recipeservice.web.dto.RecipeResponse;
-import dev.idachev.recipeservice.web.mapper.FavoriteRecipeMapper;
 import dev.idachev.recipeservice.web.mapper.RecipeMapper;
+import dev.idachev.recipeservice.user.service.UserService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -30,7 +30,7 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -42,6 +42,8 @@ class FavoriteRecipeServiceUTest {
     private RecipeRepository recipeRepository;
     @Mock
     private RecipeMapper recipeMapper;
+    @Mock
+    private UserService userService;
 
     @InjectMocks
     private FavoriteRecipeService favoriteRecipeService;

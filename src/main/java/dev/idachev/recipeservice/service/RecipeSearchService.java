@@ -4,7 +4,6 @@ import dev.idachev.recipeservice.model.Recipe;
 import dev.idachev.recipeservice.repository.RecipeRepository;
 import dev.idachev.recipeservice.web.dto.RecipeResponse;
 import dev.idachev.recipeservice.web.mapper.RecipeMapper;
-import dev.idachev.recipeservice.service.RecipeResponseEnhancer;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -16,7 +15,6 @@ import org.springframework.util.StringUtils;
 
 import java.util.List;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 /**
  * Service for recipe search operations.
@@ -28,15 +26,12 @@ public class RecipeSearchService {
 
     private final RecipeRepository recipeRepository;
     private final RecipeMapper recipeMapper;
-    private final RecipeResponseEnhancer recipeResponseEnhancer;
 
     @Autowired
     public RecipeSearchService(RecipeRepository recipeRepository,
-                               RecipeMapper recipeMapper,
-                               RecipeResponseEnhancer recipeResponseEnhancer) {
+                               RecipeMapper recipeMapper) {
         this.recipeRepository = recipeRepository;
         this.recipeMapper = recipeMapper;
-        this.recipeResponseEnhancer = recipeResponseEnhancer;
     }
 
     /**
@@ -65,10 +60,8 @@ public class RecipeSearchService {
         List<RecipeResponse> baseResponses = recipePage.getContent().stream()
                                                 .map(recipeMapper::toResponse)
                                                 .toList();
-        // Use the injected enhancer
-        List<RecipeResponse> enhancedResponses = recipeResponseEnhancer.enhanceRecipeListWithUserInteractions(baseResponses, userId);
         
-        return new PageImpl<>(enhancedResponses, pageable, recipePage.getTotalElements());
+        return new PageImpl<>(baseResponses, pageable, recipePage.getTotalElements());
     }
 
     /**
@@ -87,10 +80,8 @@ public class RecipeSearchService {
         List<RecipeResponse> baseResponses = recipePage.getContent().stream()
                                                 .map(recipeMapper::toResponse)
                                                 .toList();
-        // Use the injected enhancer
-        List<RecipeResponse> enhancedResponses = recipeResponseEnhancer.enhanceRecipeListWithUserInteractions(baseResponses, userId);
         
-        return new PageImpl<>(enhancedResponses, pageable, recipePage.getTotalElements());
+        return new PageImpl<>(baseResponses, pageable, recipePage.getTotalElements());
     }
 
     /**
@@ -134,10 +125,8 @@ public class RecipeSearchService {
             List<RecipeResponse> baseResponses = recipePage.getContent().stream()
                                                     .map(recipeMapper::toResponse)
                                                     .toList();
-            // Use the enhancer for consistency
-            List<RecipeResponse> enhancedResponses = recipeResponseEnhancer.enhanceRecipeListWithUserInteractions(baseResponses, userId);
             
-            return new PageImpl<>(enhancedResponses, pageable, recipePage.getTotalElements());
+            return new PageImpl<>(baseResponses, pageable, recipePage.getTotalElements());
         }
     }
 
@@ -153,9 +142,7 @@ public class RecipeSearchService {
         List<RecipeResponse> baseResponses = recipePage.getContent().stream()
                                                 .map(recipeMapper::toResponse)
                                                 .toList();
-        // Use the injected enhancer
-        List<RecipeResponse> enhancedResponses = recipeResponseEnhancer.enhanceRecipeListWithUserInteractions(baseResponses, userId);
-
-        return new PageImpl<>(enhancedResponses, pageable, recipePage.getTotalElements());
+        
+        return new PageImpl<>(baseResponses, pageable, recipePage.getTotalElements());
     }
 } 

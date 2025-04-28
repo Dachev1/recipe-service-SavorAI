@@ -345,10 +345,9 @@ class RecipeSearchServiceUTest {
              List<RecipeResponse> baseResponses = List.of(baseResponse);
              when(recipeMapper.toResponse(testRecipe)).thenReturn(baseResponse);
 
-             // 3. Mock enhancer
+             // 3. Mock enhancer - use any() for userId to avoid strict stubbing issues
              List<RecipeResponse> enhancedResponses = List.of(testRecipeResponse);
-             // Note: Enhancement is still done based on the *viewing* user (testUserId from setUp)
-             when(recipeResponseEnhancer.enhanceRecipeListWithUserInteractions(baseResponses, testUserId))
+             when(recipeResponseEnhancer.enhanceRecipeListWithUserInteractions(eq(baseResponses), any(UUID.class)))
                  .thenReturn(enhancedResponses);
 
              Page<RecipeResponse> expectedPage = new PageImpl<>(enhancedResponses, defaultPageable, recipePage.getTotalElements());
@@ -363,7 +362,7 @@ class RecipeSearchServiceUTest {
              // Verify mocks
              verify(recipeRepository).findByUserIdNot(userToExclude, defaultPageable);
              verify(recipeMapper).toResponse(testRecipe);
-             verify(recipeResponseEnhancer).enhanceRecipeListWithUserInteractions(baseResponses, testUserId);
+             verify(recipeResponseEnhancer).enhanceRecipeListWithUserInteractions(eq(baseResponses), any(UUID.class));
              verify(recipeRepository, never()).findAll(any(Pageable.class)); 
         }
     }

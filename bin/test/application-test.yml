@@ -1,0 +1,58 @@
+server:
+  port: 0 # Use random port for testing
+
+spring:
+  main:
+    allow-bean-definition-overriding: true
+  application:
+    name: recipe-service-test
+  datasource:
+    url: jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
+    username: sa
+    password: 
+    driver-class-name: org.h2.Driver
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    database-platform: org.hibernate.dialect.H2Dialect
+    show-sql: false
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: http://localhost:8080/auth
+          jwk-set-uri: http://localhost:8080/auth/protocol/openid-connect/certs
+  cloud:
+    openfeign:
+      client:
+        config:
+          recipe-service:
+            url: http://localhost:8080
+          user-service:
+            url: http://localhost:8081
+  ai:
+    openai:
+      api-key: test-key
+      base-url: https://api.openai.com
+      chat:
+        options:
+          model: gpt-3.5-turbo
+          temperature: 1
+
+# Security - use a fixed test JWT secret
+jwt:
+  secret: testsecrettestsecrettestsecrettestsecrettestsecrettestsecret
+  test-mode: true # Keep test mode flag to bypass token validation in tests
+
+# CORS settings
+cors:
+  allowed-origins: http://localhost:5173,http://127.0.0.1:5173
+  allowed-methods: GET,POST,PUT,DELETE,OPTIONS,PATCH
+  allowed-headers: Authorization,Content-Type,X-XSRF-TOKEN,Accept,Origin,Access-Control-Request-Method,Access-Control-Request-Headers
+  allow-credentials: true
+
+# Add explicit service URLs for tests
+app:
+  services:
+    user-service:
+      url: http://localhost:8081 

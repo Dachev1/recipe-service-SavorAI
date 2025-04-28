@@ -93,7 +93,7 @@ public class CommentController {
             @Valid @RequestBody CommentRequest request,
             @Parameter(hidden = true) @AuthenticationPrincipal UUID userId) {
         log.debug("Entering updateComment: commentId={}, userId={}", commentId, userId);
-        CommentResponse updatedComment = commentService.updateComment(commentId, request, userId);
+        CommentResponse updatedComment = commentService.updateComment(commentId, request.content(), userId);
         log.debug("Exiting updateComment: commentId={}, userId={}", commentId, userId);
         return ResponseEntity.ok(updatedComment);
     }

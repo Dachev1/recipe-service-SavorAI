@@ -1,6 +1,7 @@
 package dev.idachev.recipeservice.repository;
 
 import dev.idachev.recipeservice.model.FavoriteRecipe;
+import dev.idachev.recipeservice.repository.dto.RecipeFavoriteCountDto;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -34,9 +35,7 @@ public interface FavoriteRecipeRepository extends JpaRepository<FavoriteRecipe, 
 
     void deleteByUserIdAndRecipeId(UUID userId, UUID recipeId);
 
-    // TODO: Verify intended usage. If Recipe entity uses cascade delete for favorites,
-    // this method might be redundant. It IS used by RecipeService.deleteRecipe currently.
-    // Ensure cascade strategy aligns with this manual deletion.
+    // Used by RecipeService.deleteRecipe. Ensure cascade strategy aligns if Recipe entity changes.
     void deleteByRecipeId(UUID recipeId);
 
     /**
@@ -45,27 +44,12 @@ public interface FavoriteRecipeRepository extends JpaRepository<FavoriteRecipe, 
      * @return Map of Recipe ID to favorite count.
      */
     @Query("""
-        SELECT fr.recipeId as recipeId, COUNT(fr) as favoriteCount
+        SELECT NEW dev.idachev.recipeservice.repository.dto.RecipeFavoriteCountDto(fr.recipeId, COUNT(fr))
         FROM FavoriteRecipe fr
         WHERE fr.recipeId IN :recipeIds
         GROUP BY fr.recipeId
         """)
-    List<RecipeFavoriteCount> countFavoritesByRecipeIds(@Param("recipeIds") Set<UUID> recipeIds);
-
-    // Helper projection interface for the count query
-    interface RecipeFavoriteCount {
-        UUID getRecipeId();
-        long getFavoriteCount();
-    }
-
-    // Convenience default method to convert the projection list to a map
-    default Map<UUID, Long> getFavoriteCountsMap(Set<UUID> recipeIds) {
-        if (recipeIds == null || recipeIds.isEmpty()) {
-            return Collections.emptyMap();
-        }
-        return countFavoritesByRecipeIds(recipeIds).stream()
-                .collect(Collectors.toMap(RecipeFavoriteCount::getRecipeId, RecipeFavoriteCount::getFavoriteCount));
-    }
+    List<RecipeFavoriteCountDto> countFavoritesByRecipeIds(@Param("recipeIds") Set<UUID> recipeIds);
 
     /**
      * Finds which recipes from a given set are favorited by a specific user.
@@ -88,5 +72,14 @@ public interface FavoriteRecipeRepository extends JpaRepository<FavoriteRecipe, 
         Set<UUID> favoritedIds = findUserFavoriteRecipeIds(userId, recipeIds);
         return recipeIds.stream()
                 .collect(Collectors.toMap(Function.identity(), favoritedIds::contains));
+    }
+
+    // Convenience default method to convert the projection list to a map
+    default Map<UUID, Long> getFavoriteCountsMap(Set<UUID> recipeIds) {
+        if (recipeIds == null || recipeIds.isEmpty()) {
+            return Collections.emptyMap();
+        }
+        return countFavoritesByRecipeIds(recipeIds).stream()
+                .collect(Collectors.toMap(RecipeFavoriteCountDto::getRecipeId, RecipeFavoriteCountDto::getFavoriteCount));
     }
 } 

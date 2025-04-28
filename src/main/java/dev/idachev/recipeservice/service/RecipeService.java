@@ -14,7 +14,6 @@ import dev.idachev.recipeservice.web.dto.RecipeRequest;
 import dev.idachev.recipeservice.web.dto.RecipeResponse;
 import dev.idachev.recipeservice.web.dto.SimplifiedRecipeResponse;
 import dev.idachev.recipeservice.web.mapper.RecipeMapper;
-import dev.idachev.recipeservice.service.RecipeResponseEnhancer;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -47,7 +46,6 @@ public class RecipeService {
     private final CommentService commentService;
     private final VoteService voteService;
     private final UserService userService;
-    private final RecipeResponseEnhancer recipeResponseEnhancer;
 
     @Autowired
     public RecipeService(RecipeRepository recipeRepository,
@@ -57,8 +55,7 @@ public class RecipeService {
                          RecipeMapper recipeMapper,
                          CommentService commentService,
                          VoteService voteService,
-                         UserService userService,
-                         RecipeResponseEnhancer recipeResponseEnhancer) {
+                         UserService userService) {
         this.recipeRepository = recipeRepository;
         this.favoriteRecipeRepository = favoriteRecipeRepository;
         this.recipeImageService = recipeImageService;
@@ -67,7 +64,6 @@ public class RecipeService {
         this.commentService = commentService;
         this.voteService = voteService;
         this.userService = userService;
-        this.recipeResponseEnhancer = recipeResponseEnhancer;
     }
 
     /**
@@ -76,6 +72,13 @@ public class RecipeService {
      */
     @Transactional
     public RecipeResponse createRecipe(RecipeRequest request, MultipartFile image, UUID userId) {
+        if (userId == null) {
+            log.error("Attempted to create recipe with null userId - this should never happen!");
+            throw new IllegalArgumentException("User ID cannot be null when creating a recipe");
+        }
+        
+        log.info("Creating recipe '{}' for user ID: {}", request.title(), userId);
+        
         String finalImageUrl = request.imageUrl(); // Start with request URL
         if (image != null && !image.isEmpty()) {
             String processedImageUrl = recipeImageService.processRecipeImage(
@@ -100,9 +103,11 @@ public class RecipeService {
                 .imageUrl(finalImageUrl) // Set the final image URL
                 // createdAt, updatedAt, upvotes, downvotes rely on @Builder.Default in Recipe entity
                 .build();
+                
+        log.debug("Recipe before saving - Title: {}, UserID: {}", recipeToSave.getTitle(), recipeToSave.getUserId());
 
         Recipe savedRecipe = recipeRepository.save(recipeToSave);
-        log.info("Created recipe with ID: {}", savedRecipe.getId());
+        log.info("Created recipe with ID: {}, UserID: {}", savedRecipe.getId(), savedRecipe.getUserId());
 
         return enhanceWithUserInteractions(recipeMapper.toResponse(savedRecipe), userId);
     }
@@ -149,8 +154,8 @@ public class RecipeService {
         List<RecipeResponse> baseResponses = recipes.stream()
                                                 .map(recipeMapper::toResponse)
                                                 .toList();
-        // Use the injected enhancer
-        return recipeResponseEnhancer.enhanceRecipeListWithUserInteractions(baseResponses, userId);
+        // Enhancement logic removed
+        return baseResponses;
     }
 
     /**
@@ -164,8 +169,12 @@ public class RecipeService {
         List<RecipeResponse> baseResponses = recipePage.getContent().stream()
                                                 .map(recipeMapper::toResponse)
                                                 .toList();
-        // Use the injected enhancer
-        List<RecipeResponse> enhancedResponses = recipeResponseEnhancer.enhanceRecipeListWithUserInteractions(baseResponses, userId);
+        
+        // Enhance responses with user information before returning
+        List<RecipeResponse> enhancedResponses = baseResponses.stream()
+                                               .map(response -> enhanceWithUserInteractions(response, userId))
+                                               .toList();
+        
         return new PageImpl<>(enhancedResponses, pageable, recipePage.getTotalElements());
     }
 
@@ -226,6 +235,7 @@ public class RecipeService {
                 .createdAt(existingRecipe.getCreatedAt()) // Keep original creation time
                 .upvotes(existingRecipe.getUpvotes()) // Keep existing vote counts
                 .downvotes(existingRecipe.getDownvotes())
+                .version(existingRecipe.getVersion()) // Preserve version for optimistic locking
                 
                 // Fields from request are already set by recipeMappedFromRequest base
                 // Override specific fields managed here:
@@ -281,8 +291,15 @@ public class RecipeService {
 
     /**
      * Check if a user has permission to modify a recipe.
+     * Throws UnauthorizedAccessException if user doesn't own the recipe.
+     * 
+     * @param recipeId ID of the recipe to check
+     * @param userId ID of the user requesting access
+     * @return Recipe if user has permission
+     * @throws ResourceNotFoundException if recipe not found
+     * @throws UnauthorizedAccessException if user is not the owner
      */
-    private Recipe checkRecipePermission(UUID recipeId, UUID userId) {
+    public Recipe checkRecipePermission(UUID recipeId, UUID userId) {
         Recipe recipe = findRecipeByIdOrThrow(recipeId);
 
         if (!recipe.getUserId().equals(userId)) {
@@ -301,15 +318,14 @@ public class RecipeService {
      * Consider replacing with bulk enhancer if performance on single items becomes critical.
      */
     public RecipeResponse enhanceWithUserInteractions(RecipeResponse response, UUID userId) {
-       if (response == null) {
+        if (response == null) {
             return null;
         }
-        // This remains an N+1 approach, use enhanceRecipeListWithUserInteractions for lists.
-        // Only log warn if it's called outside of a single-item context (hard to detect here)
-        // log.warn("Single enhancement N+1 call for recipe ID: {}", response.id());
 
         UUID recipeId = response.id();
         UUID createdById = response.createdById();
+        
+        // Initialize defaults
         String authorName = "Unknown User";
         String authorUsername = "Unknown User";
         String authorIdStr = (createdById != null) ? createdById.toString() : null;
@@ -318,33 +334,37 @@ public class RecipeService {
         long commentCount = 0L;
         String userVoteStr = null;
 
-        try { // Wrap individual fetches, log errors but continue enhancement
+        try {
+            // 1. Get counts and votes from database
             favoriteCount = favoriteRecipeRepository.countByRecipeId(recipeId);
-            if (userId != null) {
-                 isFavorite = favoriteRecipeRepository.existsByUserIdAndRecipeId(userId, recipeId);
-                 RecipeVote.VoteType userVoteType = voteService.getUserVote(recipeId, userId);
-                 userVoteStr = (userVoteType != null) ? userVoteType.toString() : null;
-            }
             commentCount = commentService.getCommentCount(recipeId);
+            
+            // 2. Get user-specific data if userId provided
+            if (userId != null) {
+                isFavorite = favoriteRecipeRepository.existsByUserIdAndRecipeId(userId, recipeId);
+                RecipeVote.VoteType userVoteType = voteService.getUserVote(recipeId, userId);
+                userVoteStr = (userVoteType != null) ? userVoteType.toString() : null;
+            }
+            
+            // 3. Get author data if available
             if (createdById != null) {
-                 authorUsername = userService.getUsernameById(createdById);
-                 authorName = (authorUsername != null) ? authorUsername : "Unknown User";
-            } else {
-                 authorUsername = "Unknown User"; // Ensure reset if createdById is null
-                 authorName = "Unknown User";
+                authorUsername = userService.getUsernameById(createdById);
+                authorName = authorUsername; // Use username as name
             }
         } catch (Exception e) {
-             log.error("Error enhancing recipe {} for user {}: {}", recipeId, userId, e.getMessage());
+            log.error("Error enhancing recipe {} for user {}: {}", recipeId, userId, e.getMessage());
+            // Continue with default values rather than failing the entire request
         }
 
+        // Build the enhanced response with all data
         return new RecipeResponse(
             response.id(), response.createdById(), response.title(), response.servingSuggestions(),
             response.instructions(), response.imageUrl(), response.ingredients(), response.totalTimeMinutes(),
-            authorName, authorUsername, authorIdStr, // Enhanced 
+            authorName, authorUsername, authorIdStr, 
             response.difficulty(), response.isAiGenerated(),
-            isFavorite, favoriteCount, commentCount, // Enhanced
+            isFavorite, favoriteCount, commentCount,
             response.upvotes(), response.downvotes(), 
-            userVoteStr, // Enhanced
+            userVoteStr,
             response.createdAt(), response.updatedAt(), response.macros(), response.additionalFields()
         );
     }

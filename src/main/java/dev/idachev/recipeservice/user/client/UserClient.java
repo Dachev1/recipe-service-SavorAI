@@ -15,50 +15,55 @@ import java.util.Map;
 
 /**
  * Client interface for communicating with the user service.
- * Note: All token parameters must include the "Bearer " prefix.
+ * Endpoints are split into two categories:
+ * 1. Endpoints that require user authentication tokens (marked with @RequestHeader)
+ * 2. Endpoints for service-to-service communication that use JWT service tokens via interceptor
  */
 @FeignClient(name = "user-service", url = "${app.services.user-service.url}")
 public interface UserClient {
     /**
-     * Get user information by ID.
+     * Get user information by ID - requires user authentication
      */
     @GetMapping("/api/v1/user/{userId}")
     ResponseEntity<UserDTO> getUserById(@RequestHeader("Authorization") String token, @PathVariable("userId") UUID userId);
 
     /**
-     * Get current user information (basic version).
+     * Get current user information - requires user authentication
      */
     @GetMapping("/api/v1/user/current-user")
     ResponseEntity<UserDTO> getCurrentUser(@RequestHeader("Authorization") String token);
 
     /**
-     * Get user by ID without authentication token - internal service communication.
+     * Get user by ID - service-to-service endpoint
+     * Authentication handled by FeignClientConfig interceptor
      */
     @GetMapping("/api/v1/users/{id}")
     ResponseEntity<UserDTO> findUserByIdInternal(@PathVariable("id") UUID userId);
     
     /**
-     * Get current user profile with complete information.
+     * Get current user profile - requires user authentication
      */
     @GetMapping("/api/v1/profile")
     ResponseEntity<UserResponse> getCurrentUserProfile(@RequestHeader("Authorization") String token);
     
     /**
-     * Get user profile by username.
+     * Get user profile by username - service-to-service endpoint
+     * Authentication handled by FeignClientConfig interceptor
      */
     @GetMapping("/api/v1/profile/{username}")
     ResponseEntity<UserResponse> getUserProfileByUsername(@PathVariable("username") String username);
 
     /**
-     * Get username by ID - lightweight endpoint for internal use.
+     * Get username by ID - service-to-service endpoint
+     * Authentication handled by FeignClientConfig interceptor
      */
     @GetMapping("/api/v1/users/{id}/username")
     ResponseEntity<String> getUsernameById(@PathVariable("id") UUID userId);
 
     /**
-     * Get usernames for a set of user IDs - Bulk endpoint.
-     * TODO: Ensure this endpoint exists in the User Service.
-     * Expected to return a Map<UUID, String> or similar structure.
+     * Get usernames for multiple user IDs - service-to-service endpoint
+     * Authentication handled by FeignClientConfig interceptor
+     * TODO: Ensure this endpoint exists in the User Service
      */
     @GetMapping("/api/v1/users/usernames")
     ResponseEntity<Map<UUID, String>> getUsernamesByIds(@RequestParam("userIds") Set<UUID> userIds);

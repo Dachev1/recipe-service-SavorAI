@@ -6,6 +6,7 @@ import dev.idachev.recipeservice.model.Comment;
 import dev.idachev.recipeservice.model.Recipe;
 import dev.idachev.recipeservice.repository.CommentRepository;
 import dev.idachev.recipeservice.repository.RecipeRepository;
+import dev.idachev.recipeservice.repository.dto.RecipeCommentCountDto;
 import dev.idachev.recipeservice.user.service.UserService;
 import dev.idachev.recipeservice.web.dto.CommentRequest;
 import dev.idachev.recipeservice.web.dto.CommentResponse;
@@ -19,12 +20,14 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
+import jakarta.validation.ValidationException;
 
 /**
  * Service for comment operations.
@@ -155,62 +158,68 @@ public class CommentService {
     }
 
     /**
-     * Update a comment using the builder pattern.
+     * Updates a comment.
+     * 
+     * @param commentId The ID of the comment to update
+     * @param content The new content for the comment
+     * @param userId The ID of the user updating the comment
+     * @return The updated comment
      */
     @Transactional
-    public CommentResponse updateComment(UUID commentId, CommentRequest request, UUID userId) {
-        // 1. Fetch the existing comment
-        Comment existingComment = commentRepository.findById(commentId)
-                .orElseThrow(() -> new ResourceNotFoundException("Comment not found with id: " + commentId));
-
-        // 2. Check if the user is the owner of the comment
-        if (!existingComment.getUserId().equals(userId)) {
-            log.warn("User {} attempted to update comment {} owned by {}", userId, commentId, existingComment.getUserId());
-            throw new UnauthorizedAccessException("You do not have permission to update this comment");
+    public CommentResponse updateComment(UUID commentId, String content, UUID userId) {
+        if (content == null || content.isBlank()) {
+            throw new ValidationException("Comment content cannot be empty");
         }
 
-        // 3. Use toBuilder() and record accessor
-        Comment updatedComment = existingComment.toBuilder()
-                .content(request.content()) // Use record accessor
-                .build(); // Let @PreUpdate handle updatedAt
-        
-        // 4. Save the updated comment
-        Comment savedComment = commentRepository.save(updatedComment);
+        Comment comment = commentRepository.findById(commentId)
+                .orElseThrow(() -> new ResourceNotFoundException("Comment not found with ID: " + commentId));
+
+        // Check if the user owns the comment
+        if (!comment.getUserId().equals(userId)) {
+            throw new UnauthorizedAccessException("You can only update your own comments");
+        }
+
+        // Fetch the recipe to determine if the current user is the recipe owner
+        // Although users cannot comment on their own recipes (checked at creation),
+        // this info might be relevant for the response DTO's `isRecipeOwner` flag.
+        Recipe recipe = recipeRepository.findById(comment.getRecipeId())
+            .orElseThrow(() -> new ResourceNotFoundException(
+                "Recipe not found with id: " + comment.getRecipeId() + " associated with the comment."
+            )); // Should not happen if data is consistent
+
+        // Update using builder pattern to maintain immutability principles
+        Comment updatedCommentData = comment.toBuilder()
+                .content(content)
+                .updatedAt(LocalDateTime.now()) // Use LocalDateTime consistent with entity
+                .build();
+
+        Comment savedComment = commentRepository.save(updatedCommentData);
         log.info("Updated comment with ID: {}", savedComment.getId());
 
-        // 5. Determine ownership flags and map to response DTO
-        boolean isOwner = true; // Updater is the owner
-        // Need recipe owner status for the response DTO
-        Recipe recipe = recipeRepository.findById(savedComment.getRecipeId())
-             .orElseThrow(() -> new ResourceNotFoundException("Recipe not found for comment: " + savedComment.getRecipeId())); // Should not happen if comment exists
-        boolean isRecipeOwner = recipe.getUserId().equals(userId);
-
+        // Map to response, providing ownership flags
+        boolean isOwner = true; // User updating is the owner
+        boolean isRecipeOwner = recipe.getUserId().equals(userId); // Check if updater owns the recipe
+        // Use the existing toResponse method which takes ownership flags
         return commentMapper.toResponse(savedComment, isOwner, isRecipeOwner); 
     }
 
     /**
-     * Delete a comment.
+     * Deletes a comment.
+     * 
+     * @param commentId The ID of the comment to delete
+     * @param userId The ID of the user deleting the comment
      */
     @Transactional
     public void deleteComment(UUID commentId, UUID userId) {
         Comment comment = commentRepository.findById(commentId)
-                .orElseThrow(() -> new ResourceNotFoundException("Comment not found with id: " + commentId));
-
-        // Get the recipe to check if the user is the recipe owner
-        Recipe recipe = recipeRepository.findById(comment.getRecipeId())
-                .orElseThrow(() -> new ResourceNotFoundException("Recipe not found with id: " + comment.getRecipeId()));
-
-        // Check if the user is either the owner of the comment or the owner of the recipe
-        boolean isCommentOwner = comment.getUserId().equals(userId);
-        boolean isRecipeOwner = recipe.getUserId().equals(userId);
-
-        if (!isCommentOwner && !isRecipeOwner) {
-            throw new UnauthorizedAccessException("You do not have permission to delete this comment");
+                .orElseThrow(() -> new ResourceNotFoundException("Comment not found with ID: " + commentId));
+        
+        // Check if the user owns the comment
+        if (!comment.getUserId().equals(userId)) {
+            throw new UnauthorizedAccessException("You can only delete your own comments");
         }
-
+        
         commentRepository.delete(comment);
-        log.info("Comment with ID {} deleted successfully by user {}. Comment owner: {}, Recipe owner: {}", 
-                commentId, userId, comment.getUserId(), recipe.getUserId());
     }
 
     /**
@@ -232,58 +241,65 @@ public class CommentService {
             return Collections.emptyMap();
         }
         log.debug("Fetching comment counts for {} recipe IDs", recipeIds.size());
-        List<CommentRepository.RecipeCommentCount> counts = commentRepository.countByRecipeIdIn(recipeIds);
+        List<RecipeCommentCountDto> counts = commentRepository.countByRecipeIdIn(recipeIds);
         return counts.stream()
-                .collect(Collectors.toMap(CommentRepository.RecipeCommentCount::getRecipeId, 
-                                          CommentRepository.RecipeCommentCount::getCommentCount));
+                .collect(Collectors.toMap(RecipeCommentCountDto::getRecipeId, 
+                                          RecipeCommentCountDto::getCommentCount));
     }
 
     /**
      * Retrieves comments created by a specific user.
-     * TODO: Implement this method. Requires:
-     *       1. Defining `findByUserId(UUID userId, Pageable pageable)` in CommentRepository.
-     *       2. Mapping the results to CommentResponse, considering ownership flags.
+     * Optimized to fetch recipes in bulk for all comments.
      */
+    @Transactional(readOnly = true)
     public Page<CommentResponse> getCommentsByUserId(UUID userId, Pageable pageable) {
-        log.error("UNIMPLEMENTED: getCommentsByUserId called but feature is not implemented.");
-        // Example: Page<Comment> comments = commentRepository.findByUserId(userId, pageable);
-        // List<CommentResponse> responses = comments.stream().map(c -> commentMapper.toResponse(c, userId)).toList(); // Pass userId for ownership check
-        // return new PageImpl<>(responses, pageable, comments.getTotalElements());
-        // Returning empty page might hide the fact that it's unimplemented.
-        // Throwing exception makes it clearer during development/testing.
-        throw new UnsupportedOperationException("Get comments by user ID not implemented yet."); 
+        log.debug("Fetching comments for userId: {}, pageable: {}", userId, pageable);
+        Page<Comment> commentsPage = commentRepository.findByUserId(userId, pageable);
+        
+        if (commentsPage.isEmpty()) {
+            return new PageImpl<>(Collections.emptyList(), pageable, 0);
+        }
+        
+        // Extract all recipe IDs from comments to fetch them in bulk
+        Set<UUID> recipeIds = commentsPage.getContent().stream()
+                .map(Comment::getRecipeId)
+                .collect(Collectors.toSet());
+                
+        // Fetch all required recipes in one query
+        Map<UUID, Recipe> recipeMap = recipeRepository.findAllById(recipeIds).stream()
+                .collect(Collectors.toMap(Recipe::getId, recipe -> recipe));
+        
+        List<CommentResponse> commentResponses = commentsPage.getContent().stream()
+                .map(comment -> {
+                    // Since we are fetching by userId, the caller IS the owner of these comments.
+                    boolean isOwner = true; 
+                    boolean isRecipeOwner = false; // Default, check below
+                    
+                    // Use the preloaded recipe from our map instead of separate queries
+                    Recipe recipe = recipeMap.get(comment.getRecipeId());
+                    if (recipe != null) {
+                        isRecipeOwner = recipe.getUserId().equals(userId);
+                    } else {
+                        log.warn("Recipe with ID {} not found for comment {}", comment.getRecipeId(), comment.getId());
+                    }
+
+                    return commentMapper.toResponse(comment, isOwner, isRecipeOwner);
+                })
+                .toList();
+
+        return new PageImpl<>(commentResponses, pageable, commentsPage.getTotalElements());
     }
 
     /**
      * Allows an administrator to delete any comment.
-     * TODO: Implement this method. Requires:
-     *       1. Adding role-based authorization check (e.g., @PreAuthorize("hasRole('ADMIN')")).
-     *       2. Fetching the comment or throwing ResourceNotFoundException.
-     *       3. Calling commentRepository.delete(comment).
      */
     @Transactional
     public void deleteCommentAsAdmin(UUID commentId) {
-        log.error("UNIMPLEMENTED: deleteCommentAsAdmin called but feature is not implemented.");
-        // 1. Check if SecurityContextHolder.getContext().getAuthentication() has ADMIN role.
-        // 2. Comment comment = commentRepository.findById(commentId).orElseThrow(...);
-        // 3. commentRepository.delete(comment);
-        throw new UnsupportedOperationException("Admin comment deletion not implemented yet.");
-    }
-
-    /**
-     * Placeholder for applying rate limiting logic to comment creation.
-     * TODO: Implement rate limiting if needed. Consider using libraries like
-     *       Resilience4j (Bucket4j) or database-level tracking.
-     *       This method would likely be called within createCommentInternal.
-     */
-    private void applyRateLimitingCheck(UUID userId) {
-        // Placeholder for rate limiting logic
-        // log.debug("Rate limiting check for user {}", userId); 
-        // Example using a hypothetical RateLimiterService:
-        // if (!rateLimiterService.allowCommentCreation(userId)) {
-        //     throw new TooManyRequestsException("Comment creation limit exceeded.");
-        // }
-        // log.warn("Rate limiting check not implemented for comment creation.");
+        Comment comment = commentRepository.findById(commentId)
+                .orElseThrow(() -> new ResourceNotFoundException("Comment not found with ID: " + commentId));
+        
+        commentRepository.delete(comment);
+        log.info("Comment with ID: {} deleted by admin", commentId);
     }
 
     // Original TODOs (kept as comments above new placeholders)

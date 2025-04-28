@@ -24,17 +24,28 @@ public class CloudinaryService {
     private static final String FALLBACK_IMAGE_URL = "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=600&auto=format&fit=crop";
 
     private final Cloudinary cloudinary;
+    private final boolean isCloudinaryConfigured;
 
     @Autowired
     public CloudinaryService(Cloudinary cloudinary) {
         this.cloudinary = cloudinary;
+        // Check if Cloudinary is properly configured
+        Map<String, Object> config = cloudinary.config.asMap();
+        String cloudName = (String) config.get("cloud_name");
+        isCloudinaryConfigured = cloudName != null && !cloudName.startsWith("${") && !cloudName.isEmpty();
+        
+        if (!isCloudinaryConfigured) {
+            log.warn("Cloudinary is not properly configured. Cloud name is missing or invalid. Falling back to default image URL.");
+        } else {
+            log.info("Cloudinary configured with cloud name: {}", cloudName);
+        }
     }
 
     /**
      * Uploads an image from a URL to Cloudinary
      */
     public String uploadImageFromUrl(String imageUrl) {
-        if (imageUrl == null || imageUrl.trim().isEmpty()) {
+        if (imageUrl == null || imageUrl.trim().isEmpty() || !isCloudinaryConfigured) {
             return FALLBACK_IMAGE_URL;
         }
 
@@ -60,7 +71,7 @@ public class CloudinaryService {
      * Uploads a file to Cloudinary
      */
     public String uploadFile(MultipartFile file) {
-        if (file == null || file.isEmpty()) {
+        if (file == null || file.isEmpty() || !isCloudinaryConfigured) {
             return FALLBACK_IMAGE_URL;
         }
 
@@ -85,6 +96,11 @@ public class CloudinaryService {
      * Processes the upload to Cloudinary
      */
     private String processUpload(Object input, Map<String, Object> options) throws IOException {
+        if (!isCloudinaryConfigured) {
+            log.warn("Skipping Cloudinary upload because configuration is incomplete");
+            return FALLBACK_IMAGE_URL;
+        }
+        
         try {
             @SuppressWarnings("unchecked")
             Map<String, Object> uploadResult = cloudinary.uploader().upload(input, options);

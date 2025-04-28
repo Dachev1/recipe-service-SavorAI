@@ -1,15 +1,11 @@
 package dev.idachev.recipeservice.config;
 
-import dev.idachev.recipeservice.util.JwtUtil;
-import io.jsonwebtoken.ExpiredJwtException;
-import io.jsonwebtoken.JwtException;
-import io.jsonwebtoken.MalformedJwtException;
-import io.jsonwebtoken.security.SignatureException;
-import jakarta.servlet.FilterChain;
-import jakarta.servlet.ServletException;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
-import lombok.extern.slf4j.Slf4j;
+import java.io.IOException;
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -19,14 +15,21 @@ import org.springframework.stereotype.Component;
 import org.springframework.util.AntPathMatcher;
 import org.springframework.util.StringUtils;
 import org.springframework.web.filter.OncePerRequestFilter;
-import dev.idachev.recipeservice.web.dto.ErrorResponse;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import java.time.LocalDateTime;
 
-import java.io.IOException;
-import java.util.List;
-import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+import dev.idachev.recipeservice.util.JwtUtil;
+import dev.idachev.recipeservice.web.dto.ErrorResponse;
+import io.jsonwebtoken.ExpiredJwtException;
+import io.jsonwebtoken.JwtException;
+import io.jsonwebtoken.MalformedJwtException;
+import io.jsonwebtoken.security.SignatureException;
+import jakarta.servlet.FilterChain;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.lang.NonNull;
 
 @Component
 @Slf4j
@@ -37,28 +40,49 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private final ConcurrentHashMap<String, Long> tokenBlacklist;
     private final ObjectMapper objectMapper;
     private final List<String> publicPaths = List.of(
+            // API docs and monitoring
             "/api-docs/**", "/swagger-ui/**", "/actuator/**", "/error/**",
-            "/api/v1/recipes/auth-test", "/v1/recipes/auth-test");
+            // API test endpoints
+            "/api/v1/recipes/auth-test", "/v1/recipes/auth-test"
+            // DO NOT skip authentication for api paths - these need proper JWT auth!
+    );
 
     public JwtAuthenticationFilter(JwtUtil jwtUtil, AntPathMatcher pathMatcher,
-                                   ConcurrentHashMap<String, Long> tokenBlacklist,
-                                   ObjectMapper objectMapper) {
+            ConcurrentHashMap<String, Long> tokenBlacklist,
+            ObjectMapper objectMapper) {
         this.jwtUtil = jwtUtil;
         this.pathMatcher = pathMatcher;
         this.tokenBlacklist = tokenBlacklist;
         this.objectMapper = objectMapper;
+        log.info("JWT Filter initialized with public path patterns");
     }
 
     @Override
-    protected boolean shouldNotFilter(HttpServletRequest request) {
-        return "OPTIONS".equals(request.getMethod()) ||
-                publicPaths.stream().anyMatch(pattern ->
-                        pathMatcher.match(pattern, request.getRequestURI()));
+    protected boolean shouldNotFilter(@NonNull HttpServletRequest request) {
+        String path = request.getRequestURI();
+        
+        // Always skip OPTIONS requests for CORS
+        if ("OPTIONS".equals(request.getMethod())) {
+            return true;
+        }
+        
+        // Check if path matches any of the public patterns
+        boolean isPublicPath = publicPaths.stream()
+                .anyMatch(pattern -> pathMatcher.match(pattern, path));
+        
+        if (isPublicPath) {
+            log.debug("Skipping JWT filter for public path: {}", path);
+            return true;
+        }
+        
+        return false;
     }
 
     @Override
-    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response,
-                                    FilterChain filterChain) throws ServletException, IOException {
+    protected void doFilterInternal(
+            @NonNull HttpServletRequest request,
+            @NonNull HttpServletResponse response,
+            @NonNull FilterChain filterChain) throws ServletException, IOException {
         try {
             String token = extractJwtFromRequest(request);
             if (StringUtils.hasText(token)) {
@@ -77,8 +101,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                         log.debug("Authentication successful - Username: {}, UserID: {}, Authorities: {}",
                                 username, userId, authorities);
 
+                        // Create authentication with userId as the credentials (second parameter)
+                        // This allows @AuthenticationPrincipal to correctly extract the UUID
                         UsernamePasswordAuthenticationToken auth = new UsernamePasswordAuthenticationToken(
-                                username, userId, authorities);
+                                userId, null, authorities);
                         SecurityContextHolder.getContext().setAuthentication(auth);
                     } else {
                         handleAuthenticationFailure(response, "Invalid token", HttpStatus.UNAUTHORIZED);
@@ -133,19 +159,19 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     }
 
     private void handleAuthenticationFailure(HttpServletResponse response,
-                                             String message, HttpStatus status) throws IOException {
+            String message, HttpStatus status) throws IOException {
         response.setStatus(status.value());
         response.setContentType(MediaType.APPLICATION_JSON_VALUE);
 
         // Use ErrorResponse DTO
         ErrorResponse errorResponse = new ErrorResponse(
-            status.value(),
-            status.getReasonPhrase() + ": " + message, // Combine status reason and specific message
-            LocalDateTime.now()
-            // No details map
+                status.value(),
+                status.getReasonPhrase() + ": " + message, // Combine status reason and specific message
+                LocalDateTime.now()
+        // No details map
         );
 
         // Use ObjectMapper to write JSON
         response.getWriter().write(objectMapper.writeValueAsString(errorResponse));
     }
-} 
+}
