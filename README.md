@@ -1,5 +1,9 @@
 # SavorAI - Recipe Service
 
+## Related Repositories
+- [FE-savorAI](https://github.com/Dachev1/FE-savorAI) - Frontend application
+- [user-service-SavorAI](https://github.com/Dachev1/user-service-SavorAI) - User authentication and management service 
+
 ## Overview
 
 The Recipe Service is a core microservice in the SavorAI platform, responsible for recipe management, AI-powered recipe generation, and related operations. Built with Spring Boot and Java, this service provides robust API endpoints for creating, retrieving, updating, and searching recipes.
@@ -216,8 +220,3 @@ The service can be deployed as a standalone Spring Boot application, as a Docker
 ## License
 
 This project is licensed under the MIT License - see the LICENSE file for details.
-
-## Related Repositories
-
-- [FE-savorAI](https://github.com/yourusername/FE-savorAI) - Frontend application
-- [user-service-SavorAI](https://github.com/yourusername/user-service-SavorAI) - User authentication and management service 
