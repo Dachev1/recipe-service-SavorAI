@@ -1,7 +1,7 @@
 # SavorAI - Recipe Service
 
 ## Related Repositories
-- [FE-savorAI](https://github.com/Dachev1/FE-savorAI) - Frontend application
+- [SavorAI](https://github.com/Dachev1/SavorAI) - Frontend application
 - [user-service-SavorAI](https://github.com/Dachev1/user-service-SavorAI) - User authentication and management service 
 
 ## Overview
